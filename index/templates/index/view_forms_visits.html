@@ -1,0 +1,92 @@
+{% extends 'index/layout.html' %}
+
+{% block body %}
+
+    <style>
+        body{
+            background-color: rgb(226, 238, 224)
+        }
+    </style>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h3 class="m-0">
+                {{ request.user.establecimiento }} - Mis formularios
+            </h3>
+            <a href="{% url 'logout' %}"
+               class="btn btn-outline-danger rounded-pill px-4 fw-semibold">
+                Cerrar Sesión
+            </a>
+
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    Formularios respondidos por:
+
+                    <span class="badge bg-success-subtle text-darkgreen border border-success">
+                        {{ request.user.username }}
+                    </span>
+                    {{ request.user.first_name }} {{ request.user.last_name }}
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Nombre del formulario</th>
+                            <th class="text-center">Respondido</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for form in responded_forms %}
+                            <tr>
+                                <td>{{ form.title }}</td>
+                                <td class="text-center">✅</td>
+                                <td class="text-center">
+                                    <a href="{% url 'view_visit_response' form.code %}" class="btn btn-sm btn-outline-primary">Ver respuestas</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-muted">No has respondido formularios todavía.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Formularios disponibles para responder</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Nombre del formulario</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for form in available_forms %}
+                            <tr>
+                                <td>{{ form.title }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'view_form' form.code %}" class="btn btn-sm btn-primary">Responder</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-muted">No hay formularios disponibles para responder.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

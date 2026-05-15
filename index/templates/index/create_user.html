@@ -1,0 +1,229 @@
+{% extends 'index/layout.html' %}
+{% load static %}
+
+{% block title %}Gestión de usuarios{% endblock %}
+
+{% block body %}
+
+<div class="container-fluid m-0 p-0">
+    {% include 'index/components/panel.html' %}
+
+    <div class="create-form border-bottom" style="height: calc(100vh - 100px)">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <p class="forms-label fs-4 fw-semibold mb-0">Usuarios del sistema</p>
+                <span class="text-muted">Total: {{total_users}}</span>
+            </div>
+
+            {% if request.GET.created == '1' %}
+            <div class="alert alert-success" role="alert">
+                Usuario creado correctamente.
+            </div>
+            {% endif %}
+            {% if request.GET.updated == '1' %}
+            <div class="alert alert-success" role="alert">
+                Usuario actualizado correctamente.
+            </div>
+            {% endif %}
+            {% if request.GET.password_reset == '1' %}
+            <div class="alert alert-success" role="alert">
+                Contraseña reseteada correctamente.
+            </div>
+            {% endif %}
+            {% if message %}
+            <div class="alert alert-{{message_type}}" role="alert">
+                {{message}}
+            </div>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h5 class="mb-3">Crear usuario</h5>
+                <form method="post" action="{% url 'save_user' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-3">
+                            <label class="form-label">RUT</label>
+                            <input type="text" name="username" class="form-control id_rut" value="{{form_data.username}}"
+                                   required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="first_name" class="form-control" value="{{form_data.first_name}}" required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" name="last_name" class="form-control" value="{{form_data.last_name}}" required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Correo</label>
+                            <input type="email" name="email" class="form-control" value="{{form_data.email}}" required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Establecimiento</label>
+                            <select name="establecimiento" class="form-select" required>
+                                <option value="">Seleccione...</option>
+                                {% for est in establecimientos %}
+                                <option value="{{est.id}}" {% if form_data.establecimiento == est.id|stringformat:"s" %}selected{% endif %}>
+                                    {{est}}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Contraseña</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Confirmar contraseña</label>
+                            <input type="password" name="confirmation" class="form-control" required>
+                        </div>
+                        <div class="col-1 mt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                                       {% if form_data.is_active or form_data.is_active == None %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Activo</label>
+                            </div>
+                        </div>
+                        <div class="col-1 mt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_staff" id="is_staff"
+                                       {% if form_data.is_staff %}checked{% endif %}>
+                                <label class="form-check-label" for="is_staff">Staff</label>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">Crear usuario</button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                    <h5 class="mb-0">Listado de usuarios</h5>
+                </div>
+
+                <div class="card card-outline card-primary mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Filtros de búsqueda de usuarios</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" class="row g-3">
+                            <div class="col-md-2">
+                                <label for="username" class="form-label">RUT</label>
+                                <input type="text" name="username" id="username" class="form-control id_rut"
+                                       value="{{filters.username}}" placeholder="12.345.678-9">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="first_name" class="form-label">Nombre</label>
+                                <input type="text" name="first_name" id="first_name" class="form-control"
+                                       value="{{filters.first_name}}" placeholder="Buscar por nombre...">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="last_name" class="form-label">Apellido</label>
+                                <input type="text" name="last_name" id="last_name" class="form-control"
+                                       value="{{filters.last_name}}" placeholder="Buscar por apellido...">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="establecimiento_filter" class="form-label">Establecimiento</label>
+                                <select name="establecimiento" id="establecimiento_filter" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for est in establecimientos %}
+                                    <option value="{{est.id}}" {% if filters.establecimiento == est.id|stringformat:"s" %}selected{% endif %}>
+                                        {{est}}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="estado" class="form-label">Estado</label>
+                                <select name="estado" id="estado" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="activo" {% if filters.estado == 'activo' %}selected{% endif %}>Activo</option>
+                                    <option value="inactivo" {% if filters.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+                                </select>
+                            </div>
+                            <div class="col-12 d-flex justify-content-between align-items-end mt-2">
+                                <div>
+                                    <button class="btn btn-primary me-2" type="submit">Filtrar</button>
+                                    <a class="btn btn-outline-secondary" href="{% url 'create_user' %}">Limpiar</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr>
+                            <th>RUT</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Establecimiento</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{u.username}}</td>
+                            <td>{{u.first_name|default:'-'}}</td>
+                            <td>{{u.last_name|default:'-'}}</td>
+                            <td>{{u.establecimiento|default:'-'}}</td>
+                            <td>
+                                {% if u.is_active and u.is_staff and u.is_superuser %}
+                                    Administrador
+                                {% elif u.is_active and u.is_staff %}
+                                    Gestor
+                                {% elif u.is_active %}
+                                    Visitante
+                                {% else %}
+                                    Sin tipo
+                                {% endif %}
+                            </td>
+                            <td>{% if u.is_active %}Activo{% else %}Inactivo{% endif %}</td>
+                            <td class="d-flex gap-2">
+                                <a href="{% url 'update_user' u.id %}" class="btn btn-sm btn-outline-primary">Actualizar</a>
+                                <a href="{% url 'reset_user_password' u.id %}" class="btn btn-sm btn-outline-warning">Resetear</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-muted">No se encontraron usuarios.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if page_obj.paginator.num_pages > 1 %}
+                <nav aria-label="Paginación de usuarios" class="mt-3">
+                    <ul class="pagination mb-0">
+                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                            <a class="page-link"
+                               href="?username={{filters.username}}&first_name={{filters.first_name}}&last_name={{filters.last_name}}&establecimiento={{filters.establecimiento}}&estado={{filters.estado}}&page={% if page_obj.has_previous %}{{page_obj.previous_page_number}}{% else %}1{% endif %}">Anterior</a>
+                        </li>
+                        {% for page_number in page_obj.paginator.page_range %}
+                        {% if page_number == page_obj.number %}
+                        <li class="page-item active"><span class="page-link">{{page_number}}</span></li>
+                        {% elif page_number >= page_obj.number|add:'-2' and page_number <= page_obj.number|add:'2' %}
+                        <li class="page-item"><a class="page-link" href="?username={{filters.username}}&first_name={{filters.first_name}}&last_name={{filters.last_name}}&establecimiento={{filters.establecimiento}}&estado={{filters.estado}}&page={{page_number}}">{{page_number}}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                            <a class="page-link"
+                               href="?username={{filters.username}}&first_name={{filters.first_name}}&last_name={{filters.last_name}}&establecimiento={{filters.establecimiento}}&estado={{filters.estado}}&page={% if page_obj.has_next %}{{page_obj.next_page_number}}{% else %}{{page_obj.paginator.num_pages}}{% endif %}">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

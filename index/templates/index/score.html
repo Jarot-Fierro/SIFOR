@@ -1,0 +1,136 @@
+{% extends 'index/layout.html' %}
+{% load static %}
+{% block title %}{{ form.title }} ~ Formulario{% endblock %}
+{% block script %}
+    <script src="{% static 'index/score.js' %}" defer></script>
+    <script src="{% static 'lib/cookie.min.js' %}"></script>
+{% endblock %}
+{% block body %}
+    {% include 'index/components/panel.html' %}
+    <div class="container-fluid py-3">
+        {% include 'index/components/navbar.html' %}
+        <div class="container">
+            <span id="bg-color" style="display: none;">{{ form.background_color }}</span>
+            <span id="text-color" style="display: none;">{{ form.text_color }}</span>
+            <div class="margin-top-bottom box question-box rounded-4 shadow-sm p-3 p-md-4" id="form-head">
+                <div class="form-title-box">
+                    <h1 class="form-title edit-on-click txt-clr display-6 fw-bold">{{ form.title }}</h1>
+                </div>
+                <p class="form-description edit-on-click textarea-adjust txt-clr">{{ form.description|linebreaksbr }}</p>
+                {% if form.collect_email %}
+                    <div class="collect-email txt-clr">
+                        <h3 class="question-title">Email address <span class="require-star">*</span></h3>
+                        <input type="text" autoComplete="off" aria-label="Valid email address" disabled dir="auto"
+                               class="require-email-edit txtColor form-control"
+                               placeholder="Valid email address"/>
+                        <p class="collect-email-desc">This form is collecting email addresses. <span
+                                class="open-setting">Change settings</span>
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+            {% for question in form.questions.all %}
+                <div class="margin-top-bottom box question-box question rounded-4 shadow-sm p-3 p-md-4"
+                     data-id="{{ question.id }}">
+                    <h2 class="question-title-score">{{ question.question }}</h2>
+                    <div class="question-score d-flex align-items-center gap-2">
+                        <input type="number" data-id="{{ question.id }}" id="score" class="input-score form-control"
+                               value="{{ question.score }}">
+                        <label for="score" class="mb-0">Puntos</label>
+                    </div>
+                    <div class="answer-key">
+                        <p class="answer-key-title">Clave de Respuesta:</p>
+                        {% if question.question_type == "short" %}
+                            <input type="text" class="short-answer form-control" data-id="{{ question.id }}"
+                                   data-question-type="{{ question.question_type }}" answer-key
+                                   value="{{ question.answer_key }}">
+                        {% elif question.question_type == "paragraph" %}
+                            <textarea class="long-answer textarea-adjust form-control"
+                                      data-question-type="{{ question.question_type }}" answer-key
+                                      data-id="{{ question.id }}">{{ question.answer_key }}
+                    </textarea>
+                        {% elif question.question_type == "multiple choice" %}
+                            {% for i in question.choices.all %}
+                                <div class="form-group form-check mb-2">
+                                    <input type="radio" class="form-check-input" name="{{ question.id }}-answer"
+                                           id="choice-{{ i.id }}"
+                                           data-id="{{ question.id }}" value="{{ i.id }}" answer-key
+                                           data-question_type="{{ question.question_type }}" {% if i.is_answer %}
+                                           checked
+                                    {% endif %}>
+                                    <label for="choice-{{ i.id }}" class="form-check-label">{{ i.choice }}</label>
+                                </div>
+                            {% endfor %}
+                        {% elif question.question_type == "checkbox" %}
+                            {% for i in question.choices.all %}
+                                <div class="form-group form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" name="{{ question.id }}-answer"
+                                           id="choice-{{ i.id }}"
+                                           data-id="{{ question.id }}" value="{{ i.id }}"
+                                           data-question_type="{{ question.question_type }}" answer-key
+                                            {% if i.is_answer %} checked
+                                            {% endif %}>
+                                    <label for="choice-{{ i.id }}" class="form-check-label">{{ i.choice }}</label>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="feedback">
+                        <p class="feedback-title">Retroalimentación:</p>
+                        {% if question.feedback != None %}
+                            <textarea class="long-answer textarea-adjust form-control" data-id="{{ question.id }}"
+                                      name="feedback">{{ question.feedback }}</textarea>
+                        {% else %}
+                            <textarea class="long-answer textarea-adjust form-control" data-id="{{ question.id }}"
+                                      name="feedback"></textarea>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="question-options">
+            <a href="{% url 'view_form' form.code %}">
+                <img src="{% static 'Icon/eye.png' %}" class="form-option-icon" title="Preview" alt="Preview icon"/>
+            </a>
+            <a href="{% url 'edit_form' form.code %}">
+                <img src="{% static 'Icon/question.png' %}" class="form-option-icon" title="Questions"
+                     alt="Question icon"/>
+            </a>
+        </div>
+        <div class="modal" id="customize-theme">
+            <div class="modal-content">
+                <span class="modal-close-btn" id="close-customize-theme">&times;</span>
+                <h1 class="modal-title">Theme options</h1>
+                <h3 class="modal-subtitle">Background Color:</h3>
+                <input type="color" value="{{ form.background_color }}" list="bgColors" class="form-control"
+                       id="input-bg-color"/>
+                <datalist id="bgColors">
+                    <option value="#03a9f4"></option>
+                    <option value="#00bcd4"></option>
+                    <option value="#7ff0e7"></option>
+                    <option value="#e1d8f1"></option>
+                    <option value="#d1c4e9"></option>
+                    <option value="#f6f6f6"></option>
+                    <option value="#f1f3f4"></option>
+                </datalist>
+                <h3 class="modal-subtitle">Text Color:</h3>
+                <input type="color" value={{ form.text_color }} list="textColors" class="form-control"
+                       id="input-text-color"/>
+                <datalist id="textColors">
+                    <option value="#db4437"></option>
+                    <option value="#673ab7"></option>
+                    <option value="#3f51b5"></option>
+                    <option value="#4285f4"></option>
+                    <option value="#03a9f4"></option>
+                    <option value="#00bcd4"></option>
+                    <option value="#8a8a8a"></option>
+                    <option value="#4c3d45"></option>
+                    <option value="#272124"></option>
+                    <option value="#9aa0a2"></option>
+                    <option value="#d8ef89"></option>
+                </datalist>
+            </div>
+        </div>
+        {% include 'index/components/modal_settings.html' %}
+    </div>
+{% endblock %}

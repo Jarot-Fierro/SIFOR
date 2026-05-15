@@ -1,0 +1,177 @@
+{% extends 'index/layout.html' %}
+{% block title %}
+{{form.title}} ~ Formularios
+{% endblock %}
+{% load static %}
+{% block script %}
+<script src="{% static 'index/form.js' %}"></script>
+<script src="{% static 'lib/cookie.min.js' %}"></script>
+{% endblock %}
+{% block body %}
+{% include 'index/components/panel.html' %}
+<div class="container-fluid py-3">
+    {% include 'index/components/navbar.html' %}
+    <div class="container">
+        <span id="bg-color" style="display: none;">{{form.background_color}}</span>
+        <span id="text-color" style="display: none;">{{form.text_color}}</span>
+        <div class="margin-top-bottom box question-box card border-0 shadow-sm rounded-4 p-4 mb-4" id="form-head">
+            <div class="form-title-box">
+                <input type="text"
+                       class="form-title edit-on-click input-form-title txt-clr form-control form-control-lg border-0 px-0"
+                       value="{{form.title}}">
+            </div>
+            <textarea class="form-description edit-on-click textarea-adjust txt-clr form-control border-0 px-0" rows="5"
+                      placeholder="Descripción del Formulario" spellCheck="false"
+                      id="input-form-description">{{form.description}}</textarea>
+            {% if form.collect_email %}
+            <div class="collect-email txt-clr alert alert-light mt-3 mb-0 border">
+                <h3 class="question-title h5">Dirección de Correo Electrónico <span
+                        class="require-star text-danger">*</span></h3>
+                <input type="text" autocomplete="off" aria-label="Ingresa un correo válido" disabled dir="auto"
+                       class="require-email-edit txtColor form-control"
+                       placeholder="Ingresa un correo válido"/>
+                <p class="collect-email-desc mb-0 mt-2 small">Este formulario recopila direcciones de correo
+                    electrónico. <span
+                            class="open-setting text-primary" role="button">Cambiar en configuración</span></p>
+            </div>
+            {% endif %}
+        </div>
+        {% for question in form.questions.all %}
+        <div class="margin-top-bottom box question-box question card border-0 shadow-sm rounded-4 p-4 mb-4"
+             data-id="{{question.id}}">
+            <input type="text" data-id="{{question.id}}"
+                   class="question-title edit-on-click input-question form-control form-control-lg mb-3"
+                   value="{{question.question}}">
+            <select class="question-type-select input-question-type form-select mb-3" data-id="{{question.id}}"
+                    data-origin_type="{{question.question_type}}">
+                {% if question.question_type == "short" %}
+                <option value="short" selected>Texto Corto</option>
+                {% else %}
+                <option value="short">Texo Corto</option>
+                {% endif %}
+                {% if question.question_type == "paragraph" %}
+                <option value="paragraph" selected>Parrafo</option>
+                {% else %}
+                <option value="paragraph">Parrafo</option>
+                {% endif %}
+                {% if question.question_type == "multiple choice" %}
+                <option value="multiple choice" selected>Opciones</option>
+                {% else %}
+                <option value="multiple choice">Opciones</option>
+                {% endif %}
+                {% if question.question_type == "checkbox" %}
+                <option value="checkbox" selected>Check</option>
+                {% else %}
+                <option value="checkbox">Check</option>
+                {% endif %}
+            </select>
+            {% if question.question_type == "multiple choice" %}
+            <div class="choices" data-id="{{question.id}}">
+                {% for choice in question.choices.all %}
+                <div class="choice d-flex align-items-center gap-2 mb-2">
+                    <input type="radio" id="{{choice.id}}" disabled>
+                    <label for="{{choice.id}}">
+                        <input type="text" value="{{choice.choice}}" class="edit-choice form-control"
+                               data-id="{{choice.id}}">
+                    </label>
+                    <span class="remove-option text-danger fs-4 lh-1" title="Remove"
+                          data-id="{{choice.id}}">&times;</span>
+                </div>
+                {% endfor %}
+                <div class="choice d-flex align-items-center gap-2">
+                    <input type="radio" id="add-choice" disabled/>
+                    <label for="add-choice" class="add-option text-primary" data-question="{{question.id}}"
+                           data-type="{{question.question_type}}">Agregar opción</label>
+                </div>
+            </div>
+            {% elif question.question_type == "checkbox" %}
+            <div class="choices" data-id="{{question.id}}">
+                {% for choice in question.choices.all %}
+                <div class="choice d-flex align-items-center gap-2 mb-2">
+                    <input type="checkbox" id="{{choice.id}}" disabled>
+                    <label for="{{choice.id}}">
+                        <input type="text" data-id="{{choice.id}}" class="edit-choice form-control"
+                               value="{{choice.choice}}">
+                    </label>
+                    <span class="remove-option text-danger fs-4 lh-1" title="Remove"
+                          data-id="{{choice.id}}">&times;</span>
+                </div>
+                {% endfor %}
+                <div class="choice d-flex align-items-center gap-2">
+                    <input type="checkbox" id="add-choice" disabled/>
+                    <label for="add-choice" class="add-option text-primary" id="add-option"
+                           data-question="{{question.id}}" data-type="{{question.question_type}}">Agregar opción</label>
+                </div>
+            </div>
+            {% elif question.question_type == "short" %}
+            <div class="answers" data-id="{{question.id}}">
+                <input type="text" class="short-answer form-control" disabled placeholder="Escribe texto corto"/>
+            </div>
+            {% elif question.question_type == "paragraph" %}
+            <div class="answers" data-id="{{question.id}}">
+                <textarea class="long-answer form-control" disabled placeholder="Escribe texto largo"></textarea>
+            </div>
+            {% endif %}
+            <div class="choice-option d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
+                <div class="form-check m-0">
+                    <input type="checkbox" class="required-checkbox form-check-input" id="required-{{question.id}}"
+                           data-id="{{question.id}}" {% if question.required %}checked{% endif %}>
+                    <label for="required-{{question.id}}" class="required form-check-label">Requerido</label>
+                </div>
+                <div>
+                    <img src="{% static 'Icon/dustbin.png' %}" alt="Delete question icon"
+                         class="question-option-icon delete-question" title="Delete question"
+                         data-id="{{question.id}}">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="question-options d-flex flex-column align-items-center gap-3 bg-white rounded-pill shadow-sm p-2 position-fixed end-0 top-50 translate-middle-y me-3">
+        <img src="{% static 'Icon/add.png' %}" class="form-option-icon" title="Add question" alt="Add question icon"
+             id="add-question"/>
+        <a href="{% url 'view_form' form.code %}">
+            <img src="{% static 'Icon/eye.png' %}" class="form-option-icon" title="Preview" alt="Preview icon"/>
+        </a>
+{#        {% if form.is_quiz %}#}
+{#        <a href="{% url 'score' form.code %}" id="add-score">#}
+{#            <img src="{% static 'Icon/score.png' %}" class="form-option-icon" title="Add score" alt="Score icon"/>#}
+{#        </a>#}
+{#        {% endif %}#}
+    </div>
+    <div class="modal" id="customize-theme">
+        <div class="modal-content bg-white rounded-4 shadow p-4 border-0">
+            <span class="modal-close-btn" id="close-customize-theme">&times;</span>
+            <h1 class="modal-title">Theme options</h1>
+            <h3 class="modal-subtitle">Background Color:</h3>
+            <input type="color" value="{{form.background_color}}" list="bgColors" class="form-control"
+                   id="input-bg-color"/>
+            <datalist id="bgColors">
+                <option value="#03a9f4"></option>
+                <option value="#00bcd4"></option>
+                <option value="#7ff0e7"></option>
+                <option value="#e1d8f1"></option>
+                <option value="#d1c4e9"></option>
+                <option value="#f6f6f6"></option>
+                <option value="#f1f3f4"></option>
+                <option value="#9aa0a2"></option>
+                <option value="#d8ef89"></option>
+            </datalist>
+            <h3 class="modal-subtitle">Text Color:</h3>
+            <input type="color" value={{form.text_color}} list="textColors" class="form-control" id="input-text-color"/>
+            <datalist id="textColors">
+                <option value="#db4437"></option>
+                <option value="#673ab7"></option>
+                <option value="#3f51b5"></option>
+                <option value="#4285f4"></option>
+                <option value="#03a9f4"></option>
+                <option value="#00bcd4"></option>
+                <option value="#8a8a8a"></option>
+                <option value="#4c3d45"></option>
+                <option value="#272124"></option>
+            </datalist>
+        </div>
+    </div>
+    {% include 'index/components/modal_settings.html' %}
+</div>
+{% endblock %}

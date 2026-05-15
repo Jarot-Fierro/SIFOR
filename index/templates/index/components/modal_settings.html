@@ -1,0 +1,99 @@
+{% load static %}
+<div class="modal" id="setting">
+    <div class="modal-content txt-clr">
+        <form id="setting-form">
+            <span class="modal-close-btn" id="close-setting">&times;</span>
+            <h1 class="modal-title">Configuración</h1>
+            <h4 class="setting-preview-form small-screen"><a href="{% url 'view_form' form.code %}">Previsualizar Aquí</a></h4>
+            <div class="modal-division">
+                <div class="form-group form-check mb-2">
+                    <h3 class="modal-subtitle">General</h3>
+                    <input type="checkbox" class="form-check-input" id="collect_email"
+                            {% if form.collect_email %}
+                           checked {% endif %}>
+                    <label for="collect_email" class="setting-form-label form-check-label">Coleccionar el Correo y RUT</label>
+                </div>
+{#                <div class="form-group form-check mb-2">#}
+{#                    <input type="checkbox" class="form-check-input" id="is_quiz" {% if form.is_quiz %} checked#}
+{#                    {% endif %}>#}
+{#                    <label for="is_quiz" class="setting-form-label form-check-label">Crear formulario como Quiz</label>#}
+{#                </div>#}
+                <div class="form-group form-check mb-2">
+                    <input type="checkbox" class="form-check-input" id="is_public" {% if form.is_public %} checked
+                    {% endif %}>
+                    <label for="is_public" class="setting-form-label form-check-label">Publicar Formulario?</label>
+                </div>
+{#                <div class="form-group form-check mb-2">#}
+{#                    <input type="checkbox" class="form-check-input" id="authenticated_responder"#}
+{#                            {% if form.authenticated_responder %} checked {% endif %}>#}
+{#                    <label for="authenticated_responder" class="setting-form-label form-check-label">#}
+{#                        Solo responden cuentas auntenticadas. (Requiere iniciar sesión)</label>#}
+{#                </div>#}
+            </div>
+            <div class="modal-division">
+                <div class="form-group mb-2" id="establecimientos-settings"
+                     data-selected='[{% for establecimiento in form.establecimientos.all %}{"id":{{ establecimiento.id }},"nombre":"{{ establecimiento|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                    <h3 class="modal-subtitle">Establecimientos</h3>
+                    <p class="mb-2 small">Selecciona los establecimientos a los que estará dirigido este formulario.</p>
+                    <select id="establecimientos-select" class="form-control" multiple size="6">
+                        {% for establecimiento in establecimientos %}
+                        <option value="{{ establecimiento.id }}" {% if establecimiento in form.establecimientos.all %}selected{% endif %}>{{ establecimiento }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="selected-establecimientos" class="mt-2"></div>
+                    <p id="establecimientos-warning" class="text-danger small mt-2 mb-0" style="display: none;">
+                        No hay establecimientos seleccionados. El formulario no será visible ni respondible para ningún usuario.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-division">
+                <div class="form-group">
+                    <h3 class="modal-subtitle">Mensaje de confirmación:</h3>
+                    <textarea rows="1" class="confirmation-msg-input edit-on-click textarea-adjust"
+                              spellcheck="false"
+                              id="comfirmation_message">{{ form.confirmation_message }}</textarea>
+                </div>
+            </div>
+            <div class="modal-division">
+                <div class="form-group form-check mb-2">
+                    <input type="checkbox" class="form-check-input" id="edit_after_submit"
+                           {% if form.edit_after_submit %}checked{% endif %}>
+                    <label for="edit_after_submit" class="setting-form-label form-check-label">
+                        Editar mi respuesta luego de enviar.
+                    </label>
+                </div>
+                <div class="form-group form-check mb-2">
+                    <input type="checkbox" class="form-check-input" id="allow_view_score"
+                           {% if form.allow_view_score %}checked{% endif %}>
+                    <label for="allow_view_score" class="setting-form-label form-check-label">Ver mi puntaje</label>
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Save" class="form-control btn btn-save-setting">
+                </div>
+            </div>
+        </form>
+        <form id="delete-form" class="modal-division">
+            <fieldset class="form-group">
+                <legend class="modal-subtitle text-danger danger-zone">Zona de Peligro</legend>
+                <h3 class="delete-form-title">Borrar este formulario</h3>
+                <p class="delete-form-description">
+                    Una vez que elimines un formulario, no hay vuelta atrás. Por favor, asegúrate.
+                </p>
+                <input type="submit" value="Delete" class="form-control delete-form-btn">
+            </fieldset>
+        </form>
+    </div>
+</div>
+<div class="modal" id="send-form">
+    <div class="modal-content">
+        <span class="modal-close-btn" id="close-send-form">&times;</span>
+        <h1 class="modal-title">Enviar Formulario</h1>
+        <div class="modal-division">
+            <h4 class="modal-subtitle">Link:</h4>
+            <input type="url" class="form-control"
+                   value="http://{{ request.get_host }}/form/{{ form.code }}/viewform"
+                   copy-btn id="copy-url">
+        </div>
+        <button class="btn btn-submit" copy-btn>Copiar</button>
+    </div>
+</div>

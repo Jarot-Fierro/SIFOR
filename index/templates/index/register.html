@@ -1,0 +1,36 @@
+{% extends 'index/layout.html' %}
+{% block body %}
+<div class="container py-4">
+    <form action="{% url 'register' %}" method="post" class="box box-shadow margin-top-bottom mx-auto p-4 rounded-4" style="max-width: 520px;">
+        <div class="form-group mb-3">
+            <h1 class="box-title">Register user</h1>
+            <p class="form-error">{{message}}</p>
+            {% csrf_token %}
+        </div>
+        <div class="form-group form-animate mb-3">
+            <label class="form-label">Username:</label>
+            <input type="text" class="form-control input-animate" name="username" required>
+            <span class="input-onFocus"></span>
+        </div>
+        <div class="form-group form-animate mb-3">
+            <label class="form-label">Email:</label>
+            <input type="email" name="email" class="form-control input-animate" required>
+            <span class="input-onFocus"></span>
+        </div>
+        <div class="form-group form-animate mb-3">
+            <label class="form-label">Password:</label>
+            <input type="password" name="password" class="form-control input-animate" required>
+            <span class="input-onFocus"></span>
+        </div>
+        <div class="form-group form-animate mb-3">
+            <label class="form-label">Password Confirmation:</label>
+            <input type="password" name="confirmation" class="form-control input-animate" required>
+            <span class="input-onFocus"></span>
+        </div>
+        <div class="form-group">
+            <p class="form-label">Already have account? <a class="link" href = "{% url 'login' %}">Login</a></p>
+            <input type="submit" value="Register" class="btn btn-dark form-control w-100">
+        </div>
+    </form>
+</div>
+{% endblock %}

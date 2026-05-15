@@ -1,0 +1,123 @@
+{% extends 'index/layout.html' %}
+{% load static %}
+{% load get_property %}
+{% load generate_color %}
+{% load count %}
+{% block title %}{{form.title}}'s Formularios{% endblock %}
+{% block script %}
+<script src="{% static 'index/responses.js' %}" defer></script>
+<script src="{% static 'lib/cookie.min.js' %}"></script>
+{% endblock %}
+{% block body %}
+{% include 'index/components/panel.html' %}
+<div class="container-fluid py-3">
+    {% include 'index/components/navbar.html' %}
+    <div class="container">
+        <span id="bg-color" style="display: none;">{{form.background_color}}</span>
+        <span id="text-color" style="display: none;">{{form.text_color}}</span>
+        <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4" id="responses">
+            {% if responses.count > 0 %}
+            <h1 class="response-title h4 mb-3">Respuestas individuales:</h1>
+            <ul class="list-group list-group-flush mb-3">
+                {% for i in responses %}
+                    {% if form.collect_email %}
+                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_email}}</a></li>
+                    {% elif form.authenticated_responder %}
+                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder.username}}</a></li>
+                    {% else %}
+                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_ip}}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'export_csv' form.code  %}" class="btn btn-success">Descargar CSV</a>
+                <a href="{% url 'export_form' form.code  %}" class="btn btn-success">Descargar EXCEL</a>
+            </div>
+            {% else %}
+            <h1 class="response-title h4 mb-0">0 respuestas</h1>
+            {% endif %}
+        </div>
+        <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4">
+            <h1 class="response-title h4 mb-3">Resumen de preguntas:</h1>
+            {% for r in responsesSummary %}
+            <div class="response-summary border rounded-3 p-3 mb-3 bg-light-subtle">
+                <h3 class="response-summary-title h5 mb-3">{{r.question.question}}</h3>
+                {% if r.answers|count > 0 or filteredResponsesSummary|get_property:r.question.question|count > 0 %}
+                    {% if r.question.question_type == 'short' or r.question.question_type == 'paragraph' %}
+                        <ul class="list-group list-group-flush">
+                        {% for i in r.answers %}
+                            <li class="list-group-item px-0">{{i.answer}}</li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                            <canvas id="myChart{{r.question.id}}" class="pie-chart"></canvas>
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+                            <script>
+                                Chart.defaults.global.defaultFontFamily = "Roboto";
+                                Chart.defaults.global.defaultFontSize = 30;
+                                var ctx = document.getElementById("myChart{{r.question.id}}");
+                                let chartData{{r.question.id}} = {labels: [{% for i in filteredResponsesSummary|get_property:r.question.question %}"{{i}}",{% endfor %}],
+                                datasets: [{
+                                    data: [{% for i in filteredResponsesSummary|get_property:r.question.question %}{{filteredResponsesSummary|get_property:r.question.question|get_property:i}},{% endfor %}],
+                                    backgroundColor: [{% for _ in filteredResponsesSummary|get_property:r.question.question %}"{{0|generate_color}}",{% endfor %}],
+                                }]}
+                                new Chart(ctx, {type: 'pie', data: chartData{{r.question.id}}, options: {responsive: true}});
+                            </script>
+                    {% endif %}
+                {% else %}
+                <p class="text-muted mb-0"><i>Sin respuestas</i></p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-danger" id="delete-responses">Eliminar todas las respuestas</button>
+        </div>
+    <div class="question-options d-flex flex-column align-items-center gap-3 bg-white rounded-pill shadow-sm p-2 position-fixed end-0 top-50 translate-middle-y me-3">
+        <a href="{% url 'view_form' form.code %}">
+            <img src = "{% static 'Icon/eye.png' %}" class = "form-option-icon" title = "Preview" alt = "Preview icon" />
+        </a>
+        <a href="{% url 'edit_form' form.code %}">
+            <img src="{% static 'Icon/question.png' %}" alt="Edit Question" title="Edit this form" class="form-option-icon">
+        </a>
+{#        {% if form.is_quiz %}#}
+{#        <a href = "{% url 'score' form.code %}" id="add-score">#}
+{#            <img src = "{% static 'Icon/score.png' %}" class = "form-option-icon" title = "Add score" alt = "Score icon" />#}
+{#        </a>#}
+{#        {% endif %}#}
+    </div>
+    <div class="modal" id="customize-theme">
+        <div class="modal-content bg-white rounded-4 shadow p-4 border-0">
+            <span class="modal-close-btn" id="close-customize-theme">&times;</span>
+            <h1 class="modal-title">Theme options</h1>
+            <h3 class="modal-subtitle">Background Color:</h3>
+            <input type="color"  value = "{{form.background_color}}" list="bgColors" class="form-control" id="input-bg-color" />
+            <datalist id="bgColors">
+                <option value="#03a9f4"></option>
+                <option value="#00bcd4"></option>
+                <option value="#7ff0e7"></option>
+                <option value = "#e1d8f1"></option>
+                <option value = "#d1c4e9"></option>
+                <option value = "#f6f6f6"></option>
+                <option value="#f1f3f4"></option>
+                <option value="#9aa0a2"></option>
+                <option value="#d8ef89"></option>
+            </datalist>
+            <h3 class="modal-subtitle">Text Color:</h3>
+            <input type="color"  value = {{form.text_color}} list="textColors" class="form-control" id="input-text-color" />
+            <datalist id="textColors">
+                <option value="#db4437"></option>
+                <option value="#673ab7"></option>
+                <option value="#3f51b5"></option>
+                <option value="#4285f4"></option>
+                <option value="#03a9f4"></option>
+                <option value="#00bcd4"></option>
+                <option value="#8a8a8a"></option>
+                <option value="#4c3d45"></option>
+                <option value="#272124"></option>
+            </datalist>
+        </div>
+    </div>
+    {% include 'index/components/modal_settings.html' %}
+</div>
+{% endblock %}

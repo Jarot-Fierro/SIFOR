@@ -1,0 +1,67 @@
+{% load static %}
+<div class="form-topnav d-flex align-items-center justify-content-between bg-white rounded-3 shadow-sm px-3 py-2 mb-3">
+    <a href="/">
+        <img src="{% static 'Icon/icon.png' %}" alt="Google Forms Icon(CLONE)" class="navbar-icon form-icon"
+             title="Forms"/>
+    </a>
+    <input class="nav-text nav-form-title edit-on-click input-form-title form-control form-control-lg w-50"
+           value="{{form.title}}" type="text">
+    <div class="d-flex align-items-center gap-2 ms-auto">
+        <img src="{% static 'Icon/theme.png' %}" alt="Theme icon" id="customize-theme-btn" title="Customize theme"
+             class="nav-form-menu-icon"/>
+        <a href="{% url 'view_form' form.code %}">
+            <img src="{% static 'Icon/eye.png' %}" alt="Preview icon" title="Preview"
+                 class="nav-form-menu-icon big-screen"/>
+        </a>
+        <img src="{% static 'Icon/send.png' %}" alt="Send icon" title="Send" class="nav-form-menu-icon small-screen"
+             id="send-form-btn"/>
+        <img src="{% static 'Icon/setting.png' %}" alt="Setting icon" title="Setting"
+             class="nav-form-menu-icon open-setting"/>
+        <button class="btn btn-primary send-form-btn big-screen" title="Send" id="send-form-btn">LINK</button>
+    </div>
+</div>
+<div class="form-topnav bg-white rounded-3 shadow-sm px-3 py-2 mb-4">
+    <div class="form-navigation d-flex justify-content-center align-items-center text-center">
+        {% if form.is_quiz %}
+
+        <span class="col-4 navigation">
+            <a href="{% url 'edit_form' form.code %}"
+               class="link {% if section == 'questions' %}active text-primary{% endif %}">
+                Preguntas
+            </a>
+        </span>
+
+{#        <span class="col-4 navigation ">#}
+{#            <a href="{% url 'score' form.code %}"#}
+{#               class="link {% if section == 'score' %}active text-primary{% endif %}">#}
+{#                Estadisticas#}
+{#            </a>#}
+{#        </span>#}
+
+        <span class="col-4 navigation ">
+            <a href="{% url 'responses' form.code %}"
+               class="link {% if section == 'responses' %}active text-primary{% endif %}">
+                Respuestas
+            </a>
+        </span>
+
+        {% else %}
+
+        <span class="col-6 navigation ">
+            <a href="{% url 'edit_form' form.code %}"
+               class="link {% if section == 'questions' %}active text-primary{% endif %}">
+                Preguntas
+            </a>
+        </span>
+
+
+        <span class="col-6 navigation ">
+            <a href="{% url 'responses' form.code %}"
+               class="link {% if section == 'responses' %}active text-primary{% endif %}">
+                Respuestas
+            </a>
+        </span>
+
+        {% endif %}
+    </div>
+</div>

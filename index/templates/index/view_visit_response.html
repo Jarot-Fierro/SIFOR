@@ -1,0 +1,63 @@
+{% extends 'index/layout.html' %}
+{% load get_response %}
+{% load to_int %}
+{% load is_response %}
+
+{% block body %}
+    <style>
+        body{
+            background-color: rgb(226, 238, 224)
+        }
+    </style>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0">Mis respuestas</h3>
+            <a href="{% url 'view_forms_visits' %}" class="btn btn-outline-secondary rounded-pill px-4">Volver</a>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Datos del usuario</h5>
+                <p class="mb-1"><strong>Nombre:</strong> {{ visit_user.first_name }} {{ visit_user.last_name }}</p>
+                <p class="mb-1"><strong>Usuario:</strong> {{ visit_user.username }}</p>
+                <p class="mb-0"><strong>Correo:</strong> {{ visit_user.email|default:"-" }}</p>
+                <p class="mb-0"><strong>Establecimiento:</strong> {{ visit_user.establecimiento|default:"-" }}</p>
+            </div>
+        </div>
+
+
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Formulario</h5>
+                <p class="mb-0"><strong>{{ form.title }}</strong></p>
+            </div>
+        </div>
+
+        {% for question in form.questions.all %}
+            <div class="card shadow-sm border-0 rounded-4 mb-3">
+                <div class="card-body">
+                    <h6 class="mb-3">{{ question.question }}</h6>
+                    {% if question.question_type == "short" or question.question_type == "paragraph" %}
+                        <p class="mb-0">{{ response|get_response:question.pk|default:"-"|linebreaksbr }}</p>
+                    {% elif question.question_type == "multiple choice" %}
+                        <ul class="mb-0">
+                            {% for choice in question.choices.all %}
+                                {% if response|get_response:question.pk|to_int == choice.pk|to_int %}
+                                    <li><strong>{{ choice.choice }}</strong></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% elif question.question_type == "checkbox" %}
+                        <ul class="mb-0">
+                            {% for choice in question.choices.all %}
+                                {% if response|get_responses:question.pk|is_response:choice.pk %}
+                                    <li><strong>{{ choice.choice }}</strong></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

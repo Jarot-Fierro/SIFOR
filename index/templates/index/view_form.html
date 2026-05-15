@@ -1,0 +1,62 @@
+{% extends 'index/layout.html' %}
+{% load static %}
+{% block title %}{{form.title}} ~ Formularios{% endblock %}
+{% block script %}
+<script src="{% static 'index/viewform.js' %}" defer></script>
+{% endblock %}
+{% block body %}
+<div class="container-fluid py-4">
+    <form class="container" method="POST" action="{% url 'submit_form' form.code %}" autocomplete="off">
+        <span id="bg-color" style="display: none;">{{form.background_color}}</span>
+        <span id="text-color" style="display: none;">{{form.text_color}}</span>
+        <span id="logout-url" data-url="{% url 'logout' %}?next={% url 'login' %}" style="display: none;"></span>
+        {% csrf_token %}
+        <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-4 mb-4">
+            <div class="form-title-box">
+                <h1 class="form-title txtClr display-6 fw-bold">{{form.title}}</h1>
+                <p class="required-info small text-muted mb-0">* Obligatorio</p>
+            </div>
+            <div class="form-description txtClr">{{form.description|linebreaksbr}}</div>
+        </div>
+        {% if form.collect_email %}
+        <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-4 mb-4">
+            <h1 class="question-title txtClr h5 mb-3">Correo electrónico: <span class="require-star text-danger">*</span></h1>
+            <input type="email" name="email-address" class="short-answer form-control" placeholder="Tu correo electrónico" required>
+        </div>
+        {% endif %}
+        {% for question in form.questions.all %}
+        <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-4 mb-4">
+            <h1 class="question-title txtClr h5 mb-3">{{question.question}} {% if question.required %}<span class="require-star text-danger">*</span>{% endif %}</h1>
+            {% if question.question_type == "short" %}
+                <input type="text" name="{{question.id}}" class="short-answer form-control" placeholder = "Tu respuesta" {% if question.required %} required {% endif %}>
+            {% elif question.question_type == "paragraph" %}
+                <textarea name="{{question.id}}" placeholder="Tu respuesta" class="long-answer textarea-adjust form-control" {% if question.required %} required {% endif %}></textarea>
+            {% elif question.question_type == "multiple choice" %}
+                {% for choice in question.choices.all %}
+                <div class="multiple-choice form-check mb-2">
+                    <input type="radio" class="form-check-input" name="{{question.id}}" id="{{choice.id}}" {% if question.required %} required {% endif %} value="{{choice.id}}">
+                    <label for="{{choice.id}}" class="txtClr form-check-label">{{choice.choice}}</label>
+                </div>
+                {% endfor %}
+            {% elif question.question_type == "checkbox" %}
+            {% for choice in question.choices.all %}
+                <div class="multiple-choice form-check mb-2">
+                    <input type="checkbox" class="form-check-input" name="{{question.id}}" id="{{choice.id}}" {% if question.required %} required {% endif %} value="{{choice.id}}">
+                    <label for="{{choice.id}}" class="txtClr form-check-label">{{choice.choice}}</label>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="margin-top-bottom d-flex justify-content-end gap-2">
+            <a href="{% url 'view_forms_visits' %}" class="btn btn-outline-danger px-4 py-2">Cerrar</a>
+            <input type="submit" value="Enviar" class="btn btn-submit btn-primary px-4 py-2">
+        </div>
+    </form>
+    {% if user == form.creator %}
+        <a href="{% url 'edit_form' form.code %}">
+            <img src="{% static 'Icon/question.png' %}" alt="Editar pregunta" title="Editar este formulario" class="edit-form-link">
+        </a>
+    {% endif %}
+</div>
+{% endblock %}

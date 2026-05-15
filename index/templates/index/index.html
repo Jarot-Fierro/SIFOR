@@ -1,0 +1,228 @@
+{% extends 'index/layout.html' %}
+{% load static %}
+{% block script %}
+    <style>
+        .transition-card {
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+
+        .transition-card:hover {
+            transform: scale(1.03);
+            box-shadow: var(--bs-box-shadow-lg) !important;
+        }
+    </style>
+    <script src="{% static 'index/index.js' %}" defer></script>
+    <script src="{% static 'lib/cookie.min.js' %}" defer></script>
+{% endblock %}
+{% load static %}
+{% block body %}
+    <div class="container-fluid m-0 p-0">
+        {% include 'index/components/panel.html' %}
+        <div class="create-form bg-light py-5 border-bottom">
+            <div class="container">
+
+                <p class="forms-label fs-4 fw-semibold mb-4">
+                    Inicia con un Formulario
+                </p>
+
+                <div class="d-flex flex-wrap gap-4">
+
+                    <div class="form-template-box d-flex flex-column align-items-center">
+                        <img
+                                src="{% static 'Icon/blank-form.png' %}"
+                                alt="Blank form"
+                                title="Blank form"
+                                id="create-blank-form"
+                                class="img-fluid rounded shadow-sm border bg-white p-1"
+                                style="width: 180px; cursor:pointer;"
+                        >
+
+                        <span class="form-template-label mt-2 fw-medium text-center">
+                        Formulario en Blanco
+                    </span>
+                    </div>
+
+                    <div class="form-template-box big-screen d-flex flex-column align-items-center">
+                        <img
+                                src="{% static 'Template/contact_information.png' %}"
+                                alt="Contact Information"
+                                title="Contact Information"
+                                id="create-contact-form"
+                                class="img-fluid rounded shadow-sm border bg-white p-1"
+                                style="width: 180px; cursor:pointer;"
+                        >
+
+                        <span class="form-template-label mt-2 fw-medium text-center">
+                        Información de Contacto
+                    </span>
+                    </div>
+
+                    <div class="form-template-box big-screen d-flex flex-column align-items-center">
+                        <img
+                                src="{% static 'Template/customer_feedback.png' %}"
+                                alt="Customer Feedback"
+                                title="Customer Feedback"
+                                id="create-customer-feedback"
+                                class="img-fluid rounded shadow-sm border bg-white p-1"
+                                style="width: 180px; cursor:pointer;"
+                        >
+
+                        <span class="form-template-label mt-2 fw-medium text-center">
+                        Comentarios de los clientes
+                    </span>
+                    </div>
+
+                    <div class="form-template-box big-screen d-flex flex-column align-items-center">
+                        <img
+                                src="{% static 'Template/customer_feedback.png' %}"
+                                alt="Event Registration"
+                                title="Event Registration"
+                                id="create-event-registration"
+                                class="img-fluid rounded shadow-sm border bg-white p-1"
+                                style="width: 180px; cursor:pointer;"
+                        >
+
+                        <span class="form-template-label mt-2 fw-medium text-center">
+                        Registro de eventos
+                    </span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="container py-4">
+
+            <!-- Grid -->
+            <div class="row g-4">
+
+                {% for i in forms %}
+
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+
+                        <a href="{% url 'edit_form' i.code %}"
+                           class="text-decoration-none d-block h-100">
+
+                            <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden form-card">
+
+                                <!-- Top banner -->
+                                <div class="card-header border-0 p-0">
+
+                                    <div class="bg-gradient-form position-relative">
+
+                                        <div class="overlay-dark"></div>
+
+                                        <div class="position-absolute bottom-0 start-0 p-3 w-100">
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <!-- Content -->
+                                <div class="card-body d-flex flex-column">
+
+                                    <h5 class="fw-bold text-dark mb-3 text-truncate">
+                                        {{ i.title }}
+                                    </h5>
+
+                                    <div class="mt-auto">
+
+                                        <div class="d-flex justify-content-between align-items-center">
+
+                                            <div>
+                                                <small class="text-muted d-block">
+                                                    Última actualización
+                                                </small>
+
+                                                {% if i.createdAt == i.updatedAt %}
+
+                                                    <small class="fw-semibold text-dark">
+                                                        {{ i.createdAt }}
+                                                    </small>
+
+                                                {% else %}
+
+                                                    <small class="fw-semibold text-dark">
+                                                        {{ i.updatedAt }}
+                                                    </small>
+
+                                                {% endif %}
+
+                                            </div>
+
+                                            <div class="icon-circle">
+                                                →
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </a>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        <style>
+
+            .form-card {
+                transition: all 0.25s ease;
+                background: white;
+            }
+
+            .form-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.12) !important;
+            }
+
+            .bg-gradient-form {
+                height: 20px;
+                background: linear-gradient(
+                        135deg,
+                        #C8E6C9,
+                        #B2DFDB,
+                        #BBDEFB
+                );
+                position: relative;
+            }
+
+            .overlay-dark {
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.08);
+            }
+
+            .icon-circle {
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                background: #f8f9fa;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                color: #198754;
+                transition: 0.2s ease;
+            }
+
+            .form-card:hover .icon-circle {
+                background: #198754;
+                color: white;
+                transform: scale(1.08);
+            }
+
+        </style>
+
+    </div>
+{% endblock %}

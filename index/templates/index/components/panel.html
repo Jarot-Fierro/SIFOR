@@ -1,0 +1,97 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg bg-white shadow-sm border-bottom">
+    <div class="container-fluid">
+
+        <!-- Logo -->
+        <a href="{% url 'index' %}" class="navbar-brand d-flex align-items-center gap-3">
+
+            <img
+                    src="{% static 'Template/ssa_logo.webp' %}"
+                    alt="Logo"
+                    width="48"
+                    height="48"
+                    class="rounded-3 shadow-sm"
+            >
+
+            <span class="fs-4 fw-bold text-primary">
+                Servicio Salud de Arauco
+            </span>
+
+        </a>
+
+        <!-- Toggle mobile -->
+        <button
+                class="navbar-toggler border-0 shadow-none"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navbar -->
+        <div class="collapse navbar-collapse" id="mainNavbar">
+
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-2 mt-3 mt-lg-0">
+
+                <li class="nav-item">
+                    <a href="{% url 'index' %}"
+                       class="btn btn-outline-warning rounded-pill px-4 fw-semibold">
+                        Inicio
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'preview_submission_confirmation' %}"
+                       class="btn btn-outline-info rounded-pill px-4 fw-semibold">
+                        Previsualizar correo
+                    </a>
+                </li>
+                {% if request.user.is_superuser or request.user.is_staff %}
+                <li class="nav-item">
+                    <a href="{% url 'create_user' %}"
+                       class="btn btn-outline-primary rounded-pill px-4 fw-semibold">
+                        Usuarios
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if request.user.is_superuser %}
+                <li class="nav-item">
+                    <a href="{% url 'admin:index' %}"
+                       class="btn btn-outline-success rounded-pill px-4 fw-semibold">
+                        Panel Administrador
+                    </a>
+                </li>
+                {% endif %}
+
+                <li class="nav-item">
+                    <a href="{% url 'logout' %}"
+                       class="btn btn-outline-danger rounded-pill px-4 fw-semibold">
+                        Cerrar Sesión
+                    </a>
+                </li>
+
+            </ul>
+
+        </div>
+
+    </div>
+</nav>
+
+<style>
+
+    .navbar {
+        font-family: var(--bs-font-sans-serif);
+    }
+
+    .navbar .btn {
+        transition: all 0.2s ease;
+    }
+
+    .navbar .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--bs-box-shadow-sm);
+    }
+
+</style>
