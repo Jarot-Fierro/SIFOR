@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     document.querySelector("#input-bg-color").addEventListener("input", function(){
         document.body.style.backgroundColor = this.value;
-        fetch('edit_background_color', {
+        fetch(`${window.location.pathname.replace(/\/responses$/, '')}/edit_background_color`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".txt-clr").forEach(element => {
             element.style.color = this.value;
         })
-        fetch('edit_text_color', {
+        fetch(`${window.location.pathname.replace(/\/responses$/, '')}/edit_text_color`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#delete-form").addEventListener("submit", e => {
         e.preventDefault();
         if(window.confirm("Estas seguro que quieres ELIMINAR? Esta accion NO se puede deshacer")){
-            fetch('delete', {
+            fetch(`${window.location.pathname.replace(/\/responses$/, '')}/delete`, {
                 method: "DELETE",
                 headers: {'X-CSRFToken': csrf}
             })
@@ -157,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelector("#setting-form").addEventListener("submit", e => {
         e.preventDefault();
-        fetch('edit_setting', {
+        fetch(`${window.location.pathname.replace(/\/responses$/, '')}/edit_setting`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(document.querySelector("#delete-responses")){
         document.querySelector("#delete-responses").addEventListener("click", () => {
             if(window.confirm("Estas seguro que quieres ELIMINAR? Esta accion NO se puede deshacer")){
-                fetch('responses/delete', {
+                fetch(`${window.location.pathname}/delete`, {
                     method: "DELETE",
                     headers: {'X-CSRFToken': csrf}
                 })

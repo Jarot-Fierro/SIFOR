@@ -12,7 +12,7 @@
     {% block script %}
     {% endblock %}
     <script>
-        window.APP_URL_PREFIX = "{% url 'index' %}".replace(/\/$/, "");
+        window.APP_URL_PREFIX = "{{ request.META.SCRIPT_NAME|default:'' }}".replace(/\/$/, "");
         window.SESSION_TIMEOUT = {{ request.session.get_expiry_age|default:3600 }};
         window.IS_AUTHENTICATED = {{ request.user.is_authenticated|yesno:"true,false" }};
     </script>

@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     document.querySelectorAll(".input-form-title").forEach(title => {
         title.addEventListener("input", function(){
-            fetch(`edit_title`, {
+            fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_title`, {
                 method: "POST",
                 headers: {'X-CSRFToken': csrf},
                 body: JSON.stringify({
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
     })
     document.querySelector("#input-form-description").addEventListener("input", function(){
-        fetch('edit_description', {
+        fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_description`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     document.querySelector("#input-bg-color").addEventListener("input", function(){
         document.body.style.backgroundColor = this.value;
-        fetch('edit_background_color', {
+        fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_background_color`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".txt-clr").forEach(element => {
             element.style.color = this.value;
         })
-        fetch('edit_text_color', {
+        fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_text_color`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const isQuizElement = document.querySelector("#is_quiz");
         const authenticatedResponderElement = document.querySelector("#authenticated_responder");
-        fetch('edit_setting', {
+        fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_setting`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -247,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#delete-form").addEventListener("submit", e => {
         e.preventDefault();
         if(window.confirm("Estas seguro que quieres ELIMINAR todas las respuestas? Esta accion NO se puede deshacer")){
-            fetch('delete', {
+            fetch(`${window.location.pathname.replace(/\/edit$/, '')}/delete`, {
                 method: "DELETE",
                 headers: {'X-CSRFToken': csrf}
             })
@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.querySelectorAll('.required-checkbox').forEach(rc => {
                     if(rc.dataset.id === this.dataset.id) required = rc.checked;
                 })
-                fetch('edit_question', {
+                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_question`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -291,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.querySelectorAll('.input-question').forEach(q => {
                     if(q.dataset.id === this.dataset.id) question = q.value
                 })
-                fetch('edit_question', {
+                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_question`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -308,7 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const editChoice = () => {
         document.querySelectorAll(".edit-choice").forEach(choice => {
             choice.addEventListener("input", function(){
-                fetch('edit_choice', {
+                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_choice`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -323,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const removeOption = () => {
         document.querySelectorAll(".remove-option").forEach(ele => {
             ele.addEventListener("click",function(){
-                fetch('remove_choice', {
+                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/remove_choice`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -340,7 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const addOption = () => {
         document.querySelectorAll(".add-option").forEach(question =>{
             question.addEventListener("click", function(){
-                fetch('add_choice', {
+                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/add_choice`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -379,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteQuestion = () => {
         document.querySelectorAll(".delete-question").forEach(question => {
             question.addEventListener("click", function(){
-                fetch(`delete_question/${this.dataset.id}`, {
+                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/delete_question/${this.dataset.id}`, {
                     method: "DELETE",
                     headers: {'X-CSRFToken': csrf},
                 })
@@ -405,7 +405,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.querySelectorAll('.input-question').forEach(q => {
                     if(q.dataset.id === this.dataset.id) question = q.value
                 })
-                fetch('edit_question', {
+                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_question`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -420,7 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.querySelectorAll(".choices").forEach(choicesElement => {
                         if(choicesElement.dataset.id === this.dataset.id){
                             if(this.value === "multiple choice" || this.value === "checkbox"){
-                                fetch(`get_choice/${this.dataset.id}`, {
+                                fetch(`${window.location.pathname.replace(/\/edit$/, '')}/get_choice/${this.dataset.id}`, {
                                     method: "GET"
                                 })
                                 .then(response => response.json())
@@ -490,7 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         })
                         if((this.value === "multiple choice" || this.value === "checkbox") && question.dataset.id === this.dataset.id){
-                            fetch(`get_choice/${this.dataset.id}`, {
+                            fetch(`${window.location.pathname.replace(/\/edit$/, '')}/get_choice/${this.dataset.id}`, {
                                 method: "GET"
                             })
                             .then(response => response.json())
@@ -556,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     changeType()
     document.querySelector("#add-question").addEventListener("click", () => {
-        fetch('add_question', {
+        fetch(`${window.location.pathname.replace(/\/edit$/, '')}/add_question`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({})

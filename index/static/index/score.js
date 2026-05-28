@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     document.querySelector("#input-bg-color").addEventListener("input", function(){
         document.body.style.backgroundColor = this.value;
-        fetch('edit_background_color', {
+        fetch(`${window.location.pathname.replace(/\/score$/, '')}/edit_background_color`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".txt-clr").forEach(element => {
             element.style.color = this.value;
         })
-        fetch('edit_text_color', {
+        fetch(`${window.location.pathname.replace(/\/score$/, '')}/edit_text_color`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#delete-form").addEventListener("submit", e => {
         e.preventDefault();
         if(window.confirm("Estas seguro que quieres ELIMINAR? Esta accion NO se puede deshacer")){
-            fetch('delete', {
+            fetch(`${window.location.pathname.replace(/\/score$/, '')}/delete`, {
                 method: "DELETE",
                 headers: {'X-CSRFToken': csrf}
             })
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     document.querySelector("#setting-form").addEventListener("submit", e => {
         e.preventDefault();
-        fetch('edit_setting', {
+        fetch(`${window.location.pathname.replace(/\/score$/, '')}/edit_setting`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     document.querySelectorAll(".input-score").forEach(element => {
         element.addEventListener("input", function(){
-            fetch('edit_score', {
+            fetch(`${window.location.pathname}/edit_score`, {
                 method: "POST",
                 headers: {'X-CSRFToken': csrf},
                 body: JSON.stringify({
@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[answer-key]").forEach(element => {
         element.addEventListener("input", function(){
             if(this.dataset.question_type === "multiple choice"){
-                fetch('answer_key', {
+                fetch(`${window.location.pathname}/answer_key`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementsByName(this.name).forEach(element => {
                     if(element.checked) answers.push(element.value)
                 })
-                fetch('answer_key', {
+                fetch(`${window.location.pathname}/answer_key`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -198,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 })
             }
             else{
-                fetch('answer_key', {
+                fetch(`${window.location.pathname}/answer_key`, {
                     method: "POST",
                     headers: {'X-CSRFToken': csrf},
                     body: JSON.stringify({
@@ -211,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     document.getElementsByName('feedback').forEach(element => {
         element.addEventListener("input", function(){
-            fetch('feedback', {
+            fetch(`${window.location.pathname}/feedback`, {
                 method: "POST",
                 headers: {'X-CSRFToken': csrf},
                 body: JSON.stringify({

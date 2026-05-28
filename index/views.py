@@ -131,6 +131,12 @@ def login_view(request):
         username = request.POST["username"].upper()
         password = request.POST["password"]
         next_url = request.POST.get("next") or request.GET.get("next")
+        # Si next_url incluye el prefijo (SCRIPT_NAME), lo limpiamos para que el regex coincida con path_info
+        script_name = request.META.get('SCRIPT_NAME', '')
+        clean_next_url = next_url
+        if script_name and next_url and next_url.startswith(script_name):
+            clean_next_url = next_url[len(script_name):]
+
         user = authenticate(request, username=username, password=password)
         # if user authentication success
         if user is not None:
@@ -148,7 +154,7 @@ def login_view(request):
                 re.compile(r"^/404$"),
             ]
 
-            if next_url and (not is_form_user or any(pattern.match(next_url) for pattern in form_user_allowed_next)):
+            if next_url and (not is_form_user or any(pattern.match(clean_next_url) for pattern in form_user_allowed_next)):
                 return HttpResponseRedirect(next_url)
             return HttpResponseRedirect(_get_default_redirect_for_user(user))
         else:

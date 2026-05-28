@@ -21,7 +21,10 @@ class RoleBasedAccessMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        path = request.path
+        # Usamos request.path_info en lugar de request.path para ignorar el SCRIPT_NAME (prefijo)
+        # Esto permite que los patrones en FORM_USER_ALLOWED_PATHS sigan funcionando
+        # independientemente de si el sitio está en la raíz o en una subruta.
+        path = request.path_info
         user = request.user
 
         if user.is_authenticated and not user.is_superuser:

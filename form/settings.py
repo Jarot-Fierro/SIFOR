@@ -189,3 +189,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', 3600))  # Default 1 hour
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Base URL Configuration
+FORCE_SCRIPT_NAME = os.getenv('APP_URL_PREFIX', None)
+if FORCE_SCRIPT_NAME == "":
+    FORCE_SCRIPT_NAME = None
