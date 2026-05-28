@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "DELETE",
                 headers: {'X-CSRFToken': csrf}
             })
-            .then(() => window.location = `${window.APP_URL_PREFIX}/`)
+            .then(() => window.location = `${window.APP_URL_PREFIX || '/'}`)
         }
     })
     document.querySelectorAll("#send-form-btn").forEach(btn => {

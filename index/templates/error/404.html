@@ -23,19 +23,19 @@
                 {% if user.is_authenticated %}
 
                     {% if user.is_superuser %}
-                        <a href="" class="btn btn-dark btn-lg rounded-3">
+                        <a href="{% url 'index' %}" class="btn btn-dark btn-lg rounded-3">
                             Volver al panel principal
                         </a>
 
                     {% else %}
-                        <a href="" class="btn btn-dark btn-lg rounded-3">
+                        <a href="{% url 'index' %}" class="btn btn-dark btn-lg rounded-3">
                             Ir a mi página principal
                         </a>
                     {% endif %}
 
                 {% else %}
 
-                    <a href="" class="btn btn-dark btn-lg rounded-3">
+                    <a href="{% url 'login' %}" class="btn btn-dark btn-lg rounded-3">
                         Ir al inicio de sesión
                     </a>
 
