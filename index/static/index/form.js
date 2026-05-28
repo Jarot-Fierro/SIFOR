@@ -251,7 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "DELETE",
                 headers: {'X-CSRFToken': csrf}
             })
-            .then(() => window.location = "/")
+            .then(() => window.location = `${window.APP_URL_PREFIX}/`)
         }
     })
     const editQuestion = () => {

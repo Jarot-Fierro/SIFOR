@@ -422,7 +422,7 @@ def create_form(request):
         code = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(30))
         choices = Choices(choice="Option 1")
         choices.save()
-        question = Questions(question_type="multiple choice", question="Untitled Question", required=False)
+        question = Questions(question_type="multiple choice", question="Pregunta en Blanco", required=False)
         question.save()
         question.choices.add(choices)
         question.save()
@@ -713,7 +713,7 @@ def add_question(request, code):
     if request.method == "POST":
         choices = Choices(choice="Option 1")
         choices.save()
-        question = Questions(question_type="multiple choice", question="Untitled Question", required=False)
+        question = Questions(question_type="multiple choice", question="Pregunta en Blanco", required=False)
         question.save()
         question.choices.add(choices)
         question.save()

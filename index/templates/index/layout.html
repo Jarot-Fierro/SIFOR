@@ -11,6 +11,11 @@
     <link rel="stylesheet" href="{% static 'index/style.css' %}">
     {% block script %}
     {% endblock %}
+    <script>
+        window.APP_URL_PREFIX = "{% url 'index' %}".replace(/\/$/, "");
+        window.SESSION_TIMEOUT = {{ request.session.get_expiry_age|default:3600 }};
+        window.IS_AUTHENTICATED = {{ request.user.is_authenticated|yesno:"true,false" }};
+    </script>
 </head>
 <body>
 {% block body %}
@@ -19,6 +24,7 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{% static 'index/session_timeout.js' %}"></script>
 
 
 <script>

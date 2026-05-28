@@ -91,7 +91,7 @@
         <div class="modal-division">
             <h4 class="modal-subtitle">Link:</h4>
             <input type="url" class="form-control"
-                   value="http://{{ request.get_host }}/form/{{ form.code }}/viewform"
+                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'view_form' form.code %}"
                    copy-btn id="copy-url">
         </div>
         <button class="btn btn-submit" copy-btn>Copiar</button>
