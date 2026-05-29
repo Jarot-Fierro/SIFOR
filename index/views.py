@@ -154,8 +154,22 @@ def login_view(request):
                 re.compile(r"^/404$"),
             ]
 
-            if next_url and (not is_form_user or any(pattern.match(clean_next_url) for pattern in form_user_allowed_next)):
-                return HttpResponseRedirect(next_url)
+            if next_url:
+                # Si next_url es una URL completa (aunque no debería serlo normalmente en django 'next')
+                # la validamos contra los hosts permitidos.
+                if url_has_allowed_host_and_scheme(
+                    url=next_url,
+                    allowed_hosts={request.get_host()},
+                    require_https=request.is_secure(),
+                ):
+                    # Si el usuario es un "form_user", restringimos a donde puede ir
+                    if is_form_user:
+                        if any(pattern.match(clean_next_url) for pattern in form_user_allowed_next):
+                            return HttpResponseRedirect(next_url)
+                    else:
+                        # Superuser o staff pueden ir a cualquier next_url válida
+                        return HttpResponseRedirect(next_url)
+            
             return HttpResponseRedirect(_get_default_redirect_for_user(user))
         else:
             return render(request, "index/login.html", {

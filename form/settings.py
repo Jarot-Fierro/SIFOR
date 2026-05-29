@@ -191,6 +191,19 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Base URL Configuration
-FORCE_SCRIPT_NAME = os.getenv('APP_URL_PREFIX', None)
-if FORCE_SCRIPT_NAME == "":
+from urllib.parse import urlparse
+
+_app_url_prefix = os.getenv('APP_URL_PREFIX', None)
+if _app_url_prefix:
+    # Si es una URL completa, extraemos solo el path
+    # Si solo es un path, urlparse lo manejará correctamente
+    parsed_prefix = urlparse(_app_url_prefix)
+    FORCE_SCRIPT_NAME = parsed_prefix.path
+    if FORCE_SCRIPT_NAME.endswith('/'):
+        FORCE_SCRIPT_NAME = FORCE_SCRIPT_NAME[:-1]
+    if not FORCE_SCRIPT_NAME.startswith('/'):
+        FORCE_SCRIPT_NAME = '/' + FORCE_SCRIPT_NAME
+    if FORCE_SCRIPT_NAME == '/':
+        FORCE_SCRIPT_NAME = None
+else:
     FORCE_SCRIPT_NAME = None
