@@ -11,7 +11,13 @@
                     <input type="checkbox" class="form-check-input" id="collect_email"
                             {% if form.collect_email %}
                            checked {% endif %}>
-                    <label for="collect_email" class="setting-form-label form-check-label">Coleccionar el Correo y RUT</label>
+                    <label for="collect_email" class="setting-form-label form-check-label">Coleccionar el Correo</label>
+                </div>
+                <div class="form-group form-check mb-2">
+                    <input type="checkbox" class="form-check-input" id="collect_rut"
+                            {% if form.collect_rut %}
+                           checked {% endif %}>
+                    <label for="collect_rut" class="setting-form-label form-check-label">Coleccionar el RUT</label>
                 </div>
 {#                <div class="form-group form-check mb-2">#}
 {#                    <input type="checkbox" class="form-check-input" id="is_quiz" {% if form.is_quiz %} checked#}

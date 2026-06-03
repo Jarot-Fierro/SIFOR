@@ -25,13 +25,23 @@
                       id="input-form-description">{{form.description}}</textarea>
             {% if form.collect_email %}
             <div class="collect-email txt-clr alert alert-light mt-3 mb-0 border">
-                <h3 class="question-title h5">Dirección de Correo Electrónico <span
+                <h3 class="question-title h5">Correo electrónico <span
                         class="require-star text-danger">*</span></h3>
-                <input type="text" autocomplete="off" aria-label="Ingresa un correo válido" disabled dir="auto"
+                <input type="text" autocomplete="off" aria-label="Correo electrónico" disabled dir="auto"
                        class="require-email-edit txtColor form-control"
-                       placeholder="Ingresa un correo válido"/>
-                <p class="collect-email-desc mb-0 mt-2 small">Este formulario recopila direcciones de correo
-                    electrónico. <span
+                       placeholder="Correo electrónico"/>
+                <p class="collect-email-desc mb-0 mt-2 small">Este formulario está recopilando correos electrónicos. <span
+                            class="open-setting text-primary" role="button">Cambiar configuración</span></p>
+            </div>
+            {% endif %}
+            {% if form.collect_rut %}
+            <div class="collect-rut txt-clr alert alert-light mt-3 mb-0 border">
+                <h3 class="question-title h5">RUT <span
+                        class="require-star text-danger">*</span></h3>
+                <input type="text" autocomplete="off" aria-label="RUT" disabled dir="auto"
+                       class="require-rut-edit txtColor form-control"
+                       placeholder="RUT"/>
+                <p class="collect-rut-desc mb-0 mt-2 small">Este formulario está recopilando RUTs. <span
                             class="open-setting text-primary" role="button">Cambiar en configuración</span></p>
             </div>
             {% endif %}

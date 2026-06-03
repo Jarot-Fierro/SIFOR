@@ -6,14 +6,30 @@
     <title>Confirmación de envío</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+{% load static %}
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb;padding:24px 0;">
     <tr>
         <td align="center">
             <table role="presentation" width="720" cellspacing="0" cellpadding="0" style="max-width:720px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+
+                <!-- Banner SSA - Versión tabla -->
+{#                <tr>#}
+{#                    <td style="padding:0;background:#0f4c81;text-align:center;">#}
+{#                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">#}
+{#                            <tr>#}
+{#                                <td style="padding:0;">#}
+{#                                    <img src="{% static 'Template/Banner_SSA.png' %}" alt="Servicio de Salud Arauco"#}
+{#                                         style="width:100%;max-width:720px;height:auto;display:block;margin:0 auto;border:0;">#}
+{#                                </td>#}
+{#                            </tr>#}
+{#                            <!-- Texto adicional por si la imagen no carga -->#}
+{#                        </table>#}
+{#                    </td>#}
+{#                </tr>#}
+
                 <tr>
-                    <td style="background:#0f4c81;padding:24px 28px;color:#ffffff;">
-                        <h1 style="margin:0;font-size:24px;line-height:1.3;">Confirmación de envío de formulario</h1>
-                        <p style="margin:8px 0 0 0;font-size:14px;opacity:0.95;">Hemos recibido correctamente tu respuesta.</p>
+                    <td style="padding:16px 28px 0 28px;">
+                        <h1 style="margin:0;font-size:24px;line-height:1.3;">¡Gracias por tu participación!</h1>
                     </td>
                 </tr>
 
@@ -21,62 +37,30 @@
                     <td style="padding:24px 28px;">
                         <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">
                             {% if voter_name %}
-                                Estimado/a <strong>{{ voter_name }}</strong>, muchas gracias por enviar el formulario.
+                                Estimado/a <strong>{{ voter_name }}</strong>,
                             {% else %}
-                                Muchas gracias por enviar el formulario.
+                                Estimado/a usuario,
                             {% endif %}
                         </p>
 
-                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-                            <tr>
-                                <td colspan="2" style="background:#f9fafb;padding:12px 14px;font-size:14px;font-weight:700;color:#111827;border-bottom:1px solid #e5e7eb;">Datos del votante</td>
-                            </tr>
-                            <tr>
-                                <td style="width:180px;padding:10px 14px;font-size:13px;color:#6b7280;border-bottom:1px solid #e5e7eb;">RUT</td>
-                                <td style="padding:10px 14px;font-size:14px;border-bottom:1px solid #e5e7eb;">{{ voter_rut }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding:10px 14px;font-size:13px;color:#6b7280;border-bottom:1px solid #e5e7eb;">Correo</td>
-                                <td style="padding:10px 14px;font-size:14px;border-bottom:1px solid #e5e7eb;">{{ voter_email }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding:10px 14px;font-size:13px;color:#6b7280;border-bottom:1px solid #e5e7eb;">Establecimiento</td>
-                                <td style="padding:10px 14px;font-size:14px;border-bottom:1px solid #e5e7eb;">{{ voter_establecimiento }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding:10px 14px;font-size:13px;color:#6b7280;border-bottom:1px solid #e5e7eb;">Formulario</td>
-                                <td style="padding:10px 14px;font-size:14px;border-bottom:1px solid #e5e7eb;">{{ form.title }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding:10px 14px;font-size:13px;color:#6b7280;">Fecha de envío</td>
-                                <td style="padding:10px 14px;font-size:14px;">{{ submitted_at|date:"d/m/Y H:i" }}</td>
-                            </tr>
-                        </table>
-
-                        <h2 style="margin:24px 0 12px 0;font-size:18px;color:#111827;">Preguntas y respuestas enviadas</h2>
-
-                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-                            {% for item in answers_for_email %}
-                            <tr>
-                                <td style="padding:12px 14px;background:#ffffff;border-bottom:1px solid #e5e7eb;">
-                                    <p style="margin:0 0 8px 0;font-size:14px;font-weight:700;color:#111827;">{{ forloop.counter }}. {{ item.question }}</p>
-                                    {% for answer in item.answers %}
-                                        <p style="margin:0 0 4px 0;font-size:14px;line-height:1.5;color:#374151;">• {{ answer }}</p>
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </table>
-
+                        <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;">
+                            Hemos recibido correctamente tus respuestas al formulario <strong>{{ form.title }}</strong>.
+                            Tus respuestas están siendo procesadas y serán revisadas por nuestro equipo.
+                        </p>
                         <p style="margin:20px 0 0 0;font-size:14px;line-height:1.6;color:#374151;">
-                            Gracias por tu participación. Tu respuesta fue registrada satisfactoriamente.
+                            ¡Gracias por tu tiempo y colaboración! Si tienes alguna pregunta sobre tu envío, puedes responder a este correo.
                         </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <td style="background:#f9fafb;padding:14px 28px;border-top:1px solid #e5e7eb;">
-                        <p style="margin:0;font-size:12px;color:#6b7280;">Este es un correo automático de confirmación de envío.</p>
+                    <td style="background:#f0f9ff;padding:12px 16px;margin-bottom:24px;border-radius:4px;">
+                        <p style="margin:0;font-size:12px;color:#6b7280;">
+                            Este es un correo automático de confirmación de recepción.
+                        </p>
+                        <p style="margin:5px 0 0 0;font-size:11px;color:#9ca3af;">
+                            Servicio de Salud Arauco | Gobierno de Chile
+                        </p>
                     </td>
                 </tr>
             </table>

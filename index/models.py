@@ -81,6 +81,7 @@ class Form(models.Model):
     background_color = models.CharField(max_length=20, default="#d9efed", verbose_name="Color de fondo")
     text_color = models.CharField(max_length=20, default="#272124", verbose_name="Color del texto")
     collect_email = models.BooleanField(default=False, verbose_name="Recopilar correo")
+    collect_rut = models.BooleanField(default=False, verbose_name="Recopilar RUT")
     authenticated_responder = models.BooleanField(default=False, verbose_name="Requiere autenticación")
     edit_after_submit = models.BooleanField(default=False, verbose_name="Editar después de enviar")
     confirmation_message = models.CharField(max_length=10000, default="Su respuesta ha sido registrada.",
@@ -106,9 +107,10 @@ class Responses(models.Model):
     response_to = models.ForeignKey(Form, on_delete=models.CASCADE, related_name="response_to",
                                     verbose_name="Respuesta al formulario")
     responder_ip = models.CharField(max_length=30, verbose_name="IP del participante")
-    responder = models.ForeignKey(User, on_delete=models.CASCADE, related_name="responder", blank=True, null=True,
+    responder = models.ForeignKey('index.Funcionario', on_delete=models.CASCADE, related_name="responder", blank=True, null=True,
                                   verbose_name="Participante")
     responder_email = models.EmailField(blank=True, verbose_name="Correo del participante")
+    responder_rut = models.CharField(max_length=12, blank=True, verbose_name="RUT del participante")
     response = models.ManyToManyField(Answer, related_name="response", verbose_name="Respuestas")
 
     def __str__(self):
@@ -143,3 +145,60 @@ class Establecimiento(models.Model):
 
     def __str__(self):
         return self.alias or self.nombre
+
+
+class Funcionario(models.Model):
+    # Opciones para campos con valores fijos
+    GENERO_CHOICES = [
+        ('M', 'Masculino'),
+        ('F', 'Femenino'),
+        ('O', 'Otro'),
+    ]
+
+    TIPO_TRANSITORIO_CHOICES = [
+        ('S', 'Sí'),
+        ('N', 'No'),
+    ]
+
+    # Campos según la estructura proporcionada
+    rut = models.CharField(max_length=12, unique=True, verbose_name='RUT')
+    dv = models.CharField(max_length=1, verbose_name='Dígito Verificador')
+    nombre_funcionario = models.CharField(max_length=255, verbose_name='Nombre Funcionario')
+    correo = models.EmailField(max_length=254, blank=True, null=True, verbose_name='Correo Electrónico')
+    descripcion_planta = models.CharField(max_length=100, verbose_name='Descripción Planta')
+    descripcion_calidad_juridica = models.CharField(max_length=100, verbose_name='Descripción Calidad Jurídica')
+    genero = models.CharField(max_length=1, choices=GENERO_CHOICES, verbose_name='Género')
+    descripcion_isapre = models.CharField(max_length=100, blank=True, null=True, verbose_name='Descripción Isapre')
+    descripcion = models.CharField(max_length=100, blank=True, null=True, verbose_name='Descripción')
+    ley = models.CharField(max_length=50, verbose_name='Ley')
+    numero_horas = models.IntegerField(verbose_name='Número horas')
+    descripcion_establecimiento = models.CharField(max_length=200, verbose_name='Descripción Establecimiento')
+    establecimiento = models.ForeignKey('index.Establecimiento', blank=True, null=True, on_delete=models.CASCADE ,verbose_name='Establecimientos')
+    fecha_nacimiento = models.DateField(verbose_name='Fecha Nacimiento',  null=True, blank=True)
+    fecha_inicio_contrato = models.DateField(verbose_name='Fecha Inicio Contrato',  null=True, blank=True)
+    fecha_termino_contrato = models.DateField(verbose_name='Fecha Término Contrato', null=True, blank=True)
+    fecha_alejamiento = models.DateField(verbose_name='Fecha Alejamiento', null=True, blank=True)
+    transitorio = models.CharField(max_length=1, choices=TIPO_TRANSITORIO_CHOICES, verbose_name='Transitorio')
+
+    # Metadatos
+    fecha_importacion = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Importación')
+    ultima_actualizacion = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    activo = models.BooleanField(default=True, verbose_name='Activo')
+
+    class Meta:
+        verbose_name = 'Funcionario'
+        verbose_name_plural = 'Funcionarios'
+        ordering = ['nombre_funcionario']
+        indexes = [
+            models.Index(fields=['rut']),
+            models.Index(fields=['descripcion_planta']),
+            models.Index(fields=['fecha_inicio_contrato']),
+        ]
+
+    def __str__(self):
+        return f"{self.nombre_funcionario} - {self.rut}"
+
+    def esta_activo(self):
+        """Verifica si el contrato está activo basado en las fechas"""
+        from datetime import date
+        return self.fecha_inicio_contrato <= date.today() <= self.fecha_termino_contrato

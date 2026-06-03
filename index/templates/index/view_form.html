@@ -5,7 +5,18 @@
 <script src="{% static 'index/viewform.js' %}" defer></script>
 {% endblock %}
 {% block body %}
-<div class="container-fluid py-4">
+    <!-- Banner SSA -->
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <img src="{% static 'Template/Banner_SSA.png' %}"
+                 alt="Servicio de Salud Arauco - Gobierno de Chile Trabajando para usted"
+                 class="img-fluid w-100 rounded-3 shadow-sm"
+                 style="object-fit: cover; object-position: center 30%;">
+        </div>
+    </div>
+</div>
+<div class="container-fluid pb-4">
     <form class="container" method="POST" action="{% url 'submit_form' form.code %}" autocomplete="off">
         <span id="bg-color" style="display: none;">{{form.background_color}}</span>
         <span id="text-color" style="display: none;">{{form.text_color}}</span>
@@ -22,6 +33,15 @@
         <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-4 mb-4">
             <h1 class="question-title txtClr h5 mb-3">Correo electrónico: <span class="require-star text-danger">*</span></h1>
             <input type="email" name="email-address" class="short-answer form-control" placeholder="Tu correo electrónico" required>
+        </div>
+        {% endif %}
+        {% if form.collect_rut %}
+        <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-4 mb-4">
+            <h1 class="question-title txtClr h5 mb-3">RUT: <span class="require-star text-danger">*</span></h1>
+            <input type="text" name="rut-address" id="rut-input" class="short-answer form-control" placeholder="Tu RUT (ej: 12.345.678-9)" required>
+            <div class="invalid-feedback">
+                Por favor, ingresa un RUT válido.
+            </div>
         </div>
         {% endif %}
         {% for question in form.questions.all %}

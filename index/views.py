@@ -18,11 +18,38 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
+import itertools
 
 from .models import User, Choices, Questions, Answer, Form, Responses, Establecimiento
 
 
 # Create your views here.
+def _validate_rut(rut):
+    if not rut or '-' not in rut:
+        return False
+    try:
+        rut_body, dv = rut.split('-')
+        rut_body = rut_body.replace('.', '')
+        if not rut_body.isdigit():
+            return False
+        
+        rut_digits = map(int, reversed(rut_body))
+        factors = itertools.cycle(range(2, 8))
+        s = sum(d * f for d, f in zip(rut_digits, factors))
+        res = 11 - (s % 11)
+        
+        if res == 11:
+            expected_dv = '0'
+        elif res == 10:
+            expected_dv = 'K'
+        else:
+            expected_dv = str(res)
+            
+        return dv.upper() == expected_dv
+    except (ValueError, TypeError):
+        return False
+
+
 def _get_default_redirect_for_user(user):
     if user.is_superuser:
         return reverse("index")
@@ -563,13 +590,14 @@ def edit_setting(request, code):
         data = json.loads(request.body)
         establecimiento_ids = data.get("establecimientos", [])
 
-        formInfo.collect_email = data.get("collect_email", formInfo.collect_email)
-        formInfo.is_quiz = data.get("is_quiz", formInfo.is_quiz)
-        formInfo.is_public = data.get("is_public", formInfo.is_public)
-        formInfo.authenticated_responder = data.get("authenticated_responder", formInfo.authenticated_responder)
-        formInfo.confirmation_message = data.get("confirmation_message", formInfo.confirmation_message)
-        formInfo.edit_after_submit = data.get("edit_after_submit", formInfo.edit_after_submit)
-        formInfo.allow_view_score = data.get("allow_view_score", formInfo.allow_view_score)
+        formInfo.collect_email = data.get("collect_email") if "collect_email" in data else formInfo.collect_email
+        formInfo.collect_rut = data.get("collect_rut") if "collect_rut" in data else formInfo.collect_rut
+        formInfo.is_quiz = data.get("is_quiz") if "is_quiz" in data else formInfo.is_quiz
+        formInfo.is_public = data.get("is_public") if "is_public" in data else formInfo.is_public
+        formInfo.authenticated_responder = data.get("authenticated_responder") if "authenticated_responder" in data else formInfo.authenticated_responder
+        formInfo.confirmation_message = data.get("confirmation_message") if "confirmation_message" in data else formInfo.confirmation_message
+        formInfo.edit_after_submit = data.get("edit_after_submit") if "edit_after_submit" in data else formInfo.edit_after_submit
+        formInfo.allow_view_score = data.get("allow_view_score") if "allow_view_score" in data else formInfo.allow_view_score
         formInfo.save()
         establecimientos = Establecimiento.objects.filter(id__in=establecimiento_ids)
         formInfo.establecimientos.set(establecimientos)
@@ -733,14 +761,14 @@ def add_question(request, code):
     if request.method == "POST":
         choices = Choices(choice="Option 1")
         choices.save()
-        question = Questions(question_type="multiple choice", question="Pregunta en Blanco", required=False)
+        question = Questions(question_type="multiple choice", question="Pregunta en Blanco", required=True)
         question.save()
         question.choices.add(choices)
         question.save()
         formInfo.questions.add(question)
         formInfo.save()
         return JsonResponse({'question': {'question': "Nueva Pregunta", "question_type": "multiple choice",
-                                          "required": False, "id": question.id},
+                                          "required": True, "id": question.id},
                              "choices": {"choice": "Option 1", "is_answer": False, 'id': choices.id}})
 
 
@@ -880,7 +908,6 @@ def feedback(request, code):
             return JsonResponse({'message': "Success"})
 
 
-@login_required(login_url="login")
 def view_form(request, code):
     formInfo = Form.objects.filter(code=code)
     # Checking if form exists
@@ -920,19 +947,29 @@ def _validate_form_submission_data(form_info, post_data):
     if form_info.collect_email:
         email_value = post_data.get("email-address", "").strip()
         if not email_value:
-            return None, None, "El correo electrónico es obligatorio."
+            return None, None, None, "El correo electrónico es obligatorio."
         if len(email_value) > Responses._meta.get_field("responder_email").max_length:
-            return None, None, "El correo electrónico es demasiado largo."
+            return None, None, None, "El correo electrónico es demasiado largo."
         try:
             validate_email(email_value)
         except ValidationError:
-            return None, None, "El correo electrónico no es válido."
+            return None, None, None, "El correo electrónico no es válido."
+
+    rut_value = ""
+    if form_info.collect_rut:
+        rut_value = post_data.get("rut-address", "").strip()
+        if not rut_value:
+            return None, None, None, "El RUT es obligatorio."
+        if len(rut_value) > Responses._meta.get_field("responder_rut").max_length:
+            return None, None, None, "El RUT es demasiado largo."
+        if not _validate_rut(rut_value):
+            return None, None, None, "El RUT no es válido."
 
     question_ids = {str(question.id) for question in form_info.questions.all()}
-    allowed_post_keys = question_ids | {"csrfmiddlewaretoken", "email-address"}
+    allowed_post_keys = question_ids | {"csrfmiddlewaretoken", "email-address", "rut-address"}
     invalid_post_keys = [key for key in post_data.keys() if key not in allowed_post_keys]
     if invalid_post_keys:
-        return None, None, "Se recibieron preguntas inválidas."
+        return None, None, None, "Se recibieron preguntas inválidas."
 
     cleaned_answers = {}
     answer_max_length = Answer._meta.get_field("answer").max_length
@@ -942,33 +979,33 @@ def _validate_form_submission_data(form_info, post_data):
 
         if question.question_type in ["short", "paragraph"]:
             if len(raw_values) > 1:
-                return None, None, "Formato de respuesta inválido."
+                return None, None, None, "Formato de respuesta inválido."
             answer_value = raw_values[0] if raw_values else ""
             if question.required and answer_value == "":
-                return None, None, "Faltan respuestas obligatorias."
+                return None, None, None, "Faltan respuestas obligatorias."
             if answer_value and len(answer_value) > answer_max_length:
-                return None, None, "Una respuesta excede el largo máximo permitido."
+                return None, None, None, "Una respuesta excede el largo máximo permitido."
             if answer_value:
                 cleaned_answers[question.id] = [answer_value]
 
         elif question.question_type == "multiple choice":
             if len(raw_values) > 1:
-                return None, None, "Solo se permite una opción por pregunta."
+                return None, None, None, "Solo se permite una opción por pregunta."
             if question.required and len(raw_values) == 0:
-                return None, None, "Faltan respuestas obligatorias."
+                return None, None, None, "Faltan respuestas obligatorias."
             if not raw_values:
                 continue
             selected_value = raw_values[0]
             if not selected_value.isdigit():
-                return None, None, "Opción inválida enviada."
+                return None, None, None, "Opción inválida enviada."
             allowed_choice_ids = {str(choice_id) for choice_id in question.choices.values_list("id", flat=True)}
             if selected_value not in allowed_choice_ids:
-                return None, None, "Opción inválida enviada."
+                return None, None, None, "Opción inválida enviada."
             cleaned_answers[question.id] = [selected_value]
 
         elif question.question_type == "checkbox":
             if question.required and len(raw_values) == 0:
-                return None, None, "Faltan respuestas obligatorias."
+                return None, None, None, "Faltan respuestas obligatorias."
             if not raw_values:
                 continue
             allowed_choice_ids = {str(choice_id) for choice_id in question.choices.values_list("id", flat=True)}
@@ -976,7 +1013,7 @@ def _validate_form_submission_data(form_info, post_data):
             selected_set = set()
             for value in raw_values:
                 if not value.isdigit() or value not in allowed_choice_ids:
-                    return None, None, "Opción inválida enviada."
+                    return None, None, None, "Opción inválida enviada."
                 if value in selected_set:
                     continue
                 selected_set.add(value)
@@ -984,16 +1021,18 @@ def _validate_form_submission_data(form_info, post_data):
             cleaned_answers[question.id] = selected_values
 
         else:
-            return None, None, "Tipo de pregunta no soportado."
+            return None, None, None, "Tipo de pregunta no soportado."
 
-    return cleaned_answers, email_value, None
+    return cleaned_answers, email_value, rut_value, None
 
 
-def _resolve_recipient_email(request, form_info, email_value):
-    if request.user.is_authenticated and request.user.email:
-        return request.user.email
+def _resolve_recipient_email(request, form_info, email_value, funcionario=None):
     if form_info.collect_email and email_value:
         return email_value
+    if funcionario and funcionario.correo:
+        return funcionario.correo
+    if request.user.is_authenticated and request.user.email:
+        return request.user.email
     return ""
 
 
@@ -1020,13 +1059,19 @@ def _build_answers_for_email(form_info, cleaned_answers):
     return answers_for_email, questions_by_id
 
 
-def _build_submission_email_context(request, form_info, answers_for_email, recipient_email=""):
+def _build_submission_email_context(request, form_info, answers_for_email, recipient_email="", funcionario=None):
     voter_name = ""
     voter_rut = "No informado"
     voter_email = recipient_email or "No informado"
     voter_establecimiento = "No informado"
 
-    if request.user.is_authenticated:
+    if funcionario:
+        voter_name = funcionario.nombre_funcionario
+        voter_rut = f"{funcionario.rut}-{funcionario.dv}"
+        voter_email = recipient_email or "No informado"
+        if funcionario.descripcion_establecimiento:
+            voter_establecimiento = funcionario.descripcion_establecimiento
+    elif request.user.is_authenticated:
         voter_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
         voter_rut = request.user.username or "No informado"
         voter_email = request.user.email or recipient_email or "No informado"
@@ -1044,17 +1089,17 @@ def _build_submission_email_context(request, form_info, answers_for_email, recip
     }
 
 
-def _send_submission_email(request, form_info, cleaned_answers, email_value):
-    recipient_email = _resolve_recipient_email(request, form_info, email_value)
+def _send_submission_email(request, form_info, cleaned_answers, email_value, funcionario=None):
+    recipient_email = _resolve_recipient_email(request, form_info, email_value, funcionario)
     if not recipient_email:
         return
 
     answers_for_email, _ = _build_answers_for_email(form_info, cleaned_answers)
-    context = _build_submission_email_context(request, form_info, answers_for_email, recipient_email)
+    context = _build_submission_email_context(request, form_info, answers_for_email, recipient_email, funcionario)
 
     html_content = render_to_string("index/emails/submission_confirmation.html", context)
     subject = f"Confirmación de envío - {form_info.title}"
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@localhost")
+    from_email = settings.DEFAULT_FROM_EMAIL
 
     email_message = EmailMultiAlternatives(
         subject=subject,
@@ -1110,18 +1155,35 @@ def submit_form(request, code):
         formInfo = formInfo[0]
     if not _is_public_form_for_visit(request.user, formInfo):
         return HttpResponseRedirect(reverse("403"))
-    if request.user.is_authenticated and Responses.objects.filter(response_to=formInfo, responder=request.user).exists():
-        if formInfo.authenticated_responder:
-            logout(request)
-            return HttpResponseRedirect(reverse("login"))
-        return HttpResponseRedirect(reverse("already_voted", args=[code]))
-    if formInfo.authenticated_responder:
-        if not request.user.is_authenticated:
-            return HttpResponseRedirect(reverse("login"))
+    # if request.user.is_authenticated and Responses.objects.filter(response_to=formInfo, responder=request.user).exists():
+    #     if formInfo.authenticated_responder:
+    #         logout(request)
+    #         return HttpResponseRedirect(reverse("login"))
+    #     return HttpResponseRedirect(reverse("already_voted", args=[code]))
+    # if formInfo.authenticated_responder:
+    #     if not request.user.is_authenticated:
+    #         return HttpResponseRedirect(reverse("login"))
     if request.method == "POST":
-        cleaned_answers, email_value, validation_error = _validate_form_submission_data(formInfo, request.POST)
+        cleaned_answers, email_value, rut_value, validation_error = _validate_form_submission_data(formInfo, request.POST)
         if validation_error:
             return HttpResponse(validation_error, status=400)
+
+        # RUT normalization and validation against Funcionario table
+        funcionario = None
+        if formInfo.collect_rut and rut_value:
+            try:
+                # Format: 20.930.055-9 -> body: 20930055, dv: 9
+                rut_parts = rut_value.split('-')
+                rut_body = rut_parts[0].replace('.', '')
+                dv = rut_parts[1].upper() if len(rut_parts) > 1 else ""
+                
+                from .models import Funcionario
+                funcionario = Funcionario.objects.filter(rut=rut_body, dv=dv, activo=True).first()
+                
+                if not funcionario:
+                    return HttpResponse("Usuario no autorizado para responder la encuesta o RUT no encontrado.", status=403)
+            except Exception as e:
+                return HttpResponse(f"Error al validar el funcionario: {str(e)}", status=400)
 
         response_code = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(20))
         response_data = {
@@ -1129,13 +1191,28 @@ def submit_form(request, code):
             "response_to": formInfo,
             "responder_ip": get_client_ip(request)
         }
-        if request.user.is_authenticated:
-            response_data["responder"] = request.user
+        
+        if funcionario:
+            response_data["responder"] = funcionario
+        elif request.user.is_authenticated:
+            # Fallback to authenticated user if RUT was not collected but user is logged in
+            # though the issue suggests using Funcionario obtained from RUT.
+            # We keep request.user as fallback if it's already a Funcionario or related.
+            # But according to instructions: "Esa lógica debe eliminarse y reemplazarse por la asignación de la instancia de Funcionario obtenida durante la validación"
+            pass 
+
         if formInfo.collect_email:
             response_data["responder_email"] = email_value
+        if formInfo.collect_rut:
+            response_data["responder_rut"] = rut_value
 
         response = Responses(**response_data)
         response.save()
+        
+        # Ensure response_to is correctly associated (already in response_data, but for double checking persistence)
+        if response.response_to != formInfo:
+            response.response_to = formInfo
+            response.save()
         questions_by_id = {question.id: question for question in formInfo.questions.all()}
         for question_id, question_answers in cleaned_answers.items():
             question = questions_by_id.get(question_id)
@@ -1147,7 +1224,7 @@ def submit_form(request, code):
                 response.response.add(answer)
                 response.save()
 
-        _send_submission_email(request, formInfo, cleaned_answers, email_value)
+        _send_submission_email(request, formInfo, cleaned_answers, email_value, funcionario)
 
         return render(request, "index/form_response.html", {
             "form": formInfo,
@@ -1226,7 +1303,7 @@ def exportcsv(request, code):
     http_response = HttpResponse()
     http_response['Content-Disposition'] = f'attachment; filename= {formInfo.title}.csv'
     writer = csv.writer(http_response)
-    header = ['Response Code', 'Responder', 'Responder Email', 'Responder_ip']
+    header = ['Response Code', 'Responder', 'Responder Email', 'Responder RUT', 'Responder_ip']
 
     for question in questions:
         header.append(question.question)
@@ -1234,10 +1311,18 @@ def exportcsv(request, code):
     writer.writerow(header)
 
     for response in responses:
+        responder_name = 'Anonymous'
+        if response.responder:
+            if hasattr(response.responder, 'nombre_funcionario'):
+                responder_name = response.responder.nombre_funcionario
+            elif hasattr(response.responder, 'username'):
+                responder_name = response.responder.username
+
         response_data = [
             response.response_code,
-            response.responder.username if response.responder else 'Anonymous',
+            responder_name,
             response.responder_email if response.responder_email else '',
+            response.responder_rut if response.responder_rut else '',
             response.responder_ip if response.responder_ip else ''
         ]
         for question in questions:

@@ -69,17 +69,17 @@ document.addEventListener("DOMContentLoaded", () => {
             })
         })
     })
-    document.querySelectorAll(".open-setting").forEach(ele => {
-        ele.addEventListener('click', () => {
+    document.addEventListener('click', e => {
+        if(e.target.classList.contains("open-setting")){
             document.querySelector("#setting").style.display = "block";
-        })
-        document.querySelector("#close-setting").addEventListener('click', () => {
-            document.querySelector("#setting").style.display = "none";
-        })
-        window.onclick = e => {
-            if(e.target == document.querySelector("#setting")) document.querySelector("#setting").style.display = "none";
         }
     })
+    document.querySelector("#close-setting").addEventListener('click', () => {
+        document.querySelector("#setting").style.display = "none";
+    })
+    window.onclick = e => {
+        if(e.target == document.querySelector("#setting")) document.querySelector("#setting").style.display = "none";
+    }
     document.querySelectorAll("#send-form-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelector("#send-form").style.display = "block";
@@ -181,15 +181,45 @@ document.addEventListener("DOMContentLoaded", () => {
         establecimientosSelect.addEventListener("change", renderSelectedEstablecimientos);
     }
 
+    const formatRUT = (value) => {
+        value = value.replace(/\./g, '').replace('-', '');
+        if (value.match(/^0/)) {
+            value = value.replace(/^0+/, '');
+        }
+        let dv = '';
+        if (value.length > 0) {
+            dv = value.slice(-1);
+            value = value.slice(0, -1);
+        }
+        let formatted = '';
+        for (let i = value.length, j = 1; i > 0; i--, j++) {
+            formatted = value[i - 1] + formatted;
+            if (j % 3 === 0 && i !== 1) {
+                formatted = '.' + formatted;
+            }
+        }
+        return dv !== '' ? formatted + '-' + dv : formatted;
+    };
+
+    document.addEventListener("input", e => {
+        if (e.target.classList.contains("require-rut-edit")) {
+            e.target.value = formatRUT(e.target.value);
+        }
+    });
+
     document.querySelector("#setting-form").addEventListener("submit", e => {
         e.preventDefault();
         const isQuizElement = document.querySelector("#is_quiz");
         const authenticatedResponderElement = document.querySelector("#authenticated_responder");
+        const collectEmail = document.querySelector("#collect_email").checked;
+        const collectRut = document.querySelector("#collect_rut").checked;
+
         fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_setting`, {
             method: "POST",
             headers: {'X-CSRFToken': csrf},
             body: JSON.stringify({
-                "collect_email": document.querySelector("#collect_email").checked,
+                "collect_email": collectEmail,
+                "collect_rut": collectRut,
                 "is_quiz": isQuizElement ? isQuizElement.checked : false,
                 "is_public": document.querySelector("#is_public").checked,
                 "authenticated_responder": authenticatedResponderElement ? authenticatedResponderElement.checked : false,
@@ -199,50 +229,68 @@ document.addEventListener("DOMContentLoaded", () => {
                 "establecimientos": getSelectedEstablecimientos(),
             })
         })
-        document.querySelector("#setting").style.display = "none";
-        if(!document.querySelector("#collect_email").checked){
-            if(document.querySelector(".collect-email")) document.querySelector(".collect-email").parentNode.removeChild(document.querySelector(".collect-email"))
-        }else{
-            if(!document.querySelector(".collect-email")){
-                let collect_email = document.createElement("div");
-                collect_email.classList.add("collect-email", "txt-clr", "alert", "alert-light", "mt-3", "mb-0", "border")
-                collect_email.innerHTML = `<h3 class="question-title h5">Email address <span class="require-star text-danger">*</span></h3>
-                <input type="text" autoComplete="off" aria-label="Valid email address" disabled dir = "auto" class="require-email-edit form-control"
-                placeholder = "Valid email address" />
-                <p class="collect-email-desc mb-0 mt-2 small">This form is collecting email addresses. <span class="open-setting text-primary" role="button">Change settings</span></p>`
-                document.querySelector("#form-head").appendChild(collect_email)
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === "Success") {
+                document.querySelector("#setting").style.display = "none";
+                if(!collectEmail){
+                    if(document.querySelector(".collect-email")) document.querySelector(".collect-email").parentNode.removeChild(document.querySelector(".collect-email"))
+                }else{
+                    if(!document.querySelector(".collect-email")){
+                        let collect_email = document.createElement("div");
+                        collect_email.classList.add("collect-email", "txt-clr", "alert", "alert-light", "mt-3", "mb-0", "border")
+                        collect_email.innerHTML = `<h3 class="question-title h5">Correo electrónico <span class="require-star text-danger">*</span></h3>
+                        <input type="text" autoComplete="off" aria-label="Correo electrónico" disabled dir = "auto" class="require-email-edit form-control"
+                        placeholder = "Correo electrónico" />
+                        <p class="collect-email-desc mb-0 mt-2 small">Este formulario está recopilando correos electrónicos. <span class="open-setting text-primary" role="button">Cambiar configuración</span></p>`
+                        document.querySelector("#form-head").appendChild(collect_email)
+                    }
+                }
+                if(!collectRut){
+                    if(document.querySelector(".collect-rut")) document.querySelector(".collect-rut").parentNode.removeChild(document.querySelector(".collect-rut"))
+                }else{
+                    if(!document.querySelector(".collect-rut")){
+                        let collect_rut = document.createElement("div");
+                        collect_rut.classList.add("collect-rut", "txt-clr", "alert", "alert-light", "mt-3", "mb-0", "border")
+                        collect_rut.innerHTML = `<h3 class="question-title h5">RUT <span class="require-star text-danger">*</span></h3>
+                        <input type="text" autoComplete="off" aria-label="RUT" disabled dir = "auto" class="require-rut-edit form-control"
+                        placeholder = "RUT" />
+                        <p class="collect-rut-desc mb-0 mt-2 small">Este formulario está recopilando RUTs. <span class="open-setting text-primary" role="button">Cambiar configuración</span></p>`
+                        document.querySelector("#form-head").appendChild(collect_rut)
+                    }
+                }
+                if(isQuizElement && isQuizElement.checked){
+                    if(!document.querySelector("#add-score")){
+                        let is_quiz = document.createElement('a')
+                        is_quiz.setAttribute("href", "score");
+                        is_quiz.setAttribute("id", "add-score");
+                        is_quiz.innerHTML = `<img src = "/static/Icon/score.png" id="add-score" class = "form-option-icon" title = "Add score" alt = "Score icon" />`;
+                        document.querySelector(".question-options").appendChild(is_quiz)
+                    }
+                    if(!document.querySelector(".score")){
+                        let quiz_nav = document.createElement("span");
+                        quiz_nav.classList.add("col-4");
+                        quiz_nav.classList.add("navigation");
+                        quiz_nav.classList.add('score');
+                        quiz_nav.innerHTML =   `<a href = "score" class="link">Scores</a>`;
+                        [...document.querySelector(".form-navigation").children].forEach(element => {
+                            element.classList.remove("col-6")
+                            element.classList.add('col-4')
+                        })
+                        document.querySelector(".form-navigation").insertBefore(quiz_nav, document.querySelector(".form-navigation").childNodes[2])
+                    }
+                }else{
+                    if(document.querySelector("#add-score")) document.querySelector("#add-score").parentNode.removeChild(document.querySelector("#add-score"))
+                    if(document.querySelector(".score")){
+                        [...document.querySelector(".form-navigation").children].forEach(element => {
+                            element.classList.remove("col-4")
+                            element.classList.add('col-6')
+                        })
+                        document.querySelector(".score").parentNode.removeChild(document.querySelector(".score"))
+                    }
+                }
             }
-        }
-        if(isQuizElement && isQuizElement.checked){
-            if(!document.querySelector("#add-score")){
-                let is_quiz = document.createElement('a')
-                is_quiz.setAttribute("href", "score");
-                is_quiz.setAttribute("id", "add-score");
-                is_quiz.innerHTML = `<img src = "/static/Icon/score.png" id="add-score" class = "form-option-icon" title = "Add score" alt = "Score icon" />`;
-                document.querySelector(".question-options").appendChild(is_quiz)
-            }
-            if(!document.querySelector(".score")){
-                let quiz_nav = document.createElement("span");
-                quiz_nav.classList.add("col-4");
-                quiz_nav.classList.add("navigation");
-                quiz_nav.classList.add('score');
-                quiz_nav.innerHTML =   `<a href = "score" class="link">Scores</a>`;
-                [...document.querySelector(".form-navigation").children].forEach(element => {
-                    element.classList.remove("col-6")
-                    element.classList.add('col-4')
-                })
-                document.querySelector(".form-navigation").insertBefore(quiz_nav, document.querySelector(".form-navigation").childNodes[2])
-            }
-        }else{
-            if(document.querySelector("#add-score")) document.querySelector("#add-score").parentNode.removeChild(document.querySelector("#add-score"))
-            if(document.querySelector(".score")){
-                [...document.querySelector(".form-navigation").children].forEach(element => {
-                    element.classList.remove("col-4")
-                    element.classList.add('col-6')
-                })
-                document.querySelector(".score").parentNode.removeChild(document.querySelector(".score"))
-            }
-        }
+        })
     })
     document.querySelector("#delete-form").addEventListener("submit", e => {
         e.preventDefault();
@@ -590,7 +638,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="choice-option d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
                 <div class="form-check m-0">
-                    <input type="checkbox" class="required-checkbox form-check-input" id="required-${result["question"].id}" data-id="${result["question"].id}">
+                    <input type="checkbox" class="required-checkbox form-check-input" id="required-${result["question"].id}" data-id="${result["question"].id}" checked>
                     <label for="required-${result["question"].id}" class="required form-check-label">Requerido</label>
                 </div>
                 <div>

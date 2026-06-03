@@ -20,8 +20,12 @@
             <h1 class="response-title h4 mb-3">Respuestas individuales:</h1>
             <ul class="list-group list-group-flush mb-3">
                 {% for i in responses %}
-                    {% if form.collect_email %}
+                    {% if form.collect_email and form.collect_rut %}
+                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_email}} ({{i.responder_rut}})</a></li>
+                    {% elif form.collect_email %}
                         <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_email}}</a></li>
+                    {% elif form.collect_rut %}
+                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_rut}}</a></li>
                     {% elif form.authenticated_responder %}
                         <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder.username}}</a></li>
                     {% else %}

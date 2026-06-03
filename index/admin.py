@@ -155,6 +155,59 @@ class EstablecimientoResource(resources.ModelResource):
         skip_unchanged = True
         report_skipped = True
 
+class FuncionarioResource(resources.ModelResource):
+    class Meta:
+        model = Funcionario
+        import_id_fields = ['rut']
+
+        fields = (
+            'id',
+            'rut',
+            'dv',
+            'nombre_funcionario',
+            'correo',
+            'descripcion_planta',
+            'descripcion_calidad_juridica',
+            'genero',
+            'descripcion_isapre',
+            'descripcion',
+            'ley',
+            'numero_horas',
+            'descripcion_establecimiento',
+            'establecimiento',
+            'fecha_nacimiento',
+            'fecha_inicio_contrato',
+            'fecha_termino_contrato',
+            'fecha_alejamiento',
+            'transitorio',
+            'activo',
+            'fecha_importacion',
+            'ultima_actualizacion',
+        )
+
+        skip_unchanged = True
+        report_skipped = True
+        export_order = (
+            'rut',
+            'dv',
+            'nombre_funcionario',
+            'correo',
+            'descripcion_planta',
+            'descripcion_calidad_juridica',
+            'genero',
+            'descripcion_isapre',
+            'descripcion',
+            'ley',
+            'numero_horas',
+            'descripcion_establecimiento',
+            'fecha_nacimiento',
+            'fecha_inicio_contrato',
+            'fecha_termino_contrato',
+            'fecha_alejamiento',
+            'transitorio',
+            'activo',
+        )
+
 
 # =========================
 # Admins
@@ -307,6 +360,7 @@ class FormAdmin(ImportExportModelAdmin):
         "creator",
         "is_quiz",
         "collect_email",
+        "collect_rut",
         "authenticated_responder",
         "createdAt",
     )
@@ -319,6 +373,7 @@ class FormAdmin(ImportExportModelAdmin):
     list_filter = (
         "is_quiz",
         "collect_email",
+        "collect_rut",
         "authenticated_responder",
         "allow_view_score",
     )
@@ -340,11 +395,13 @@ class ResponsesAdmin(ImportExportModelAdmin):
         "response_to",
         "responder",
         "responder_email",
+        "responder_rut",
     )
 
     search_fields = (
         "response_code",
         "responder_email",
+        "responder_rut",
     )
 
     list_filter = (
@@ -398,3 +455,114 @@ class EstablecimientoAdmin(ImportExportModelAdmin):
 
     ordering = ("-id",)
     autocomplete_fields = ('comuna',)
+
+    # =========================
+    # Resources
+    # =========================
+
+
+
+    # =========================
+    # Admins
+    # =========================
+
+@admin.register(Funcionario)
+class FuncionarioAdmin(ImportExportModelAdmin):
+    resource_class = FuncionarioResource
+
+    list_display = (
+        "id",
+        "rut",
+        "dv",
+        "nombre_funcionario",
+        "correo",
+        "descripcion_planta",
+        "establecimiento",
+        "activo",
+    )
+
+    list_display_links = ("nombre_funcionario",)
+
+    search_fields = (
+        "rut",
+        "nombre_funcionario",
+        "correo",
+        "descripcion_establecimiento",
+    )
+
+    list_filter = (
+        "establecimiento",
+        "genero",
+        "descripcion_planta",
+        "descripcion_calidad_juridica",
+        "transitorio",
+        "activo",
+        "ley",
+    )
+
+    ordering = ("-fecha_inicio_contrato", "nombre_funcionario")
+
+    date_hierarchy = "fecha_inicio_contrato"
+
+    fieldsets = (
+        ("Información Personal", {
+            "fields": (
+                "rut",
+                "dv",
+                "nombre_funcionario",
+                "correo",
+                "genero",
+                "fecha_nacimiento",
+            )
+        }),
+
+        ("Información Laboral", {
+            "fields": (
+                "descripcion_planta",
+                "descripcion_calidad_juridica",
+                "ley",
+                "numero_horas",
+                "descripcion_establecimiento",
+                "establecimiento",
+                "fecha_inicio_contrato",
+                "fecha_termino_contrato",
+                "fecha_alejamiento",
+            )
+        }),
+
+        ("Información Salud", {
+            "fields": (
+                "descripcion_isapre",
+                "descripcion",
+            )
+        }),
+
+        ("Estado", {
+            "fields": (
+                "transitorio",
+                "activo",
+            )
+        }),
+
+        ("Metadatos", {
+            "fields": (
+                "fecha_importacion",
+                "ultima_actualizacion",
+            ),
+            "classes": ("collapse",),
+        }),
+    )
+
+    readonly_fields = ("fecha_importacion", "ultima_actualizacion")
+
+    actions = ['activar_funcionarios', 'desactivar_funcionarios']
+
+    @admin.action(description="Activar funcionarios seleccionados")
+    def activar_funcionarios(self, request, queryset):
+        updated = queryset.update(activo=True)
+        self.message_user(request, f"{updated} funcionario(s) activado(s) correctamente.")
+
+    @admin.action(description="Desactivar funcionarios seleccionados")
+    def desactivar_funcionarios(self, request, queryset):
+        updated = queryset.update(activo=False)
+        self.message_user(request, f"{updated} funcionario(s) desactivado(s) correctamente.")
