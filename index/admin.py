@@ -209,6 +209,17 @@ class FuncionarioResource(resources.ModelResource):
         )
 
 
+
+
+class FormTokenResource(resources.ModelResource):
+    class Meta:
+        model = FormToken
+        import_id_fields = ['id']
+        fields = ('id', 'form', 'funcionario', 'token', 'expiration_date', 'used', 'created_at')
+        skip_unchanged = True
+        report_skipped = True
+
+
 # =========================
 # Admins
 # =========================
@@ -566,3 +577,35 @@ class FuncionarioAdmin(ImportExportModelAdmin):
     def desactivar_funcionarios(self, request, queryset):
         updated = queryset.update(activo=False)
         self.message_user(request, f"{updated} funcionario(s) desactivado(s) correctamente.")
+
+
+
+
+@admin.register(FormToken)
+class FormTokenAdmin(ImportExportModelAdmin):
+    resource_class = FormTokenResource
+
+    list_display = (
+        "id",
+        "form",
+        "funcionario",
+        "expiration_date",
+        "used",
+        "created_at",
+    )
+
+    search_fields = (
+        "form__title",
+        "funcionario__nombre_funcionario",
+        "funcionario__rut",
+        "token",
+    )
+
+    list_filter = (
+        "used",
+        "form",
+    )
+
+    readonly_fields = ("created_at",)
+
+    ordering = ("-id",)

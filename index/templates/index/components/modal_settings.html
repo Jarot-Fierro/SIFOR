@@ -103,3 +103,16 @@
         <button class="btn btn-submit" copy-btn>Copiar</button>
     </div>
 </div>
+<div class="modal" id="send-form-public">
+    <div class="modal-content">
+        <span class="modal-close-btn" id="close-send-form-public">&times;</span>
+        <h1 class="modal-title">formulario2</h1>
+        <div class="modal-division">
+            <h4 class="modal-subtitle">Link:</h4>
+            <input type="url" class="form-control"
+                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'validate_form_identity' form.code %}"
+                   copy-btn id="copy-url-public">
+        </div>
+        <button class="btn btn-submit" copy-btn-public>Copiar</button>
+    </div>
+</div>

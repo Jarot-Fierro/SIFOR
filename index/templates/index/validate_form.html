@@ -1,0 +1,53 @@
+{% extends "index/layout.html" %}
+
+{% block title %}Validar Identidad - {{ form.title }}{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0 text-center">Validación de Identidad</h4>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted text-center mb-4">
+                        Para responder el formulario <strong>{{ form.title }}</strong>, por favor ingrese su RUT y correo electrónico.
+                    </p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="rut" class="form-label">RUT</label>
+                            <input type="text" name="rut" id="id_rut" class="form-control form-control-lg id_rut" 
+                                   placeholder="12.345.678-9" required>
+                            <div class="form-text">Ingrese su RUT con puntos y guion.</div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="email" class="form-label">Correo Electrónico</label>
+                            <input type="email" name="email" id="email" class="form-control form-control-lg" 
+                                   placeholder="correo@ejemplo.com" required>
+                            <div class="form-text">Usaremos este correo para registrar su participación.</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Validar y Continuar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <small class="text-muted">Sistema de validación segura</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

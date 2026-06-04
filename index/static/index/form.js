@@ -91,6 +91,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if(e.target == document.querySelector("#send-form")) document.querySelector("#send-form").style.display = "none";
         }
     })
+    document.querySelectorAll("#send-formvalidate-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelector("#send-form-public").style.display = "block";
+        })
+        document.querySelector("#close-send-form-public").addEventListener("click", () => {
+            document.querySelector("#send-form-public").style.display = "none";
+        })
+        window.onclick = e => {
+            if(e.target == document.querySelector("#send-form-public")) document.querySelector("#send-form-public").style.display = "none";
+        }
+    })
     const copyToClipboard = text => {
         if (navigator.clipboard && window.isSecureContext) {
             return navigator.clipboard.writeText(text);
@@ -130,6 +141,21 @@ document.addEventListener("DOMContentLoaded", () => {
             copyToClipboard(url.value)
                 .then(() => {
                     document.querySelector("#send-form").style.display = "none";
+                })
+                .catch(() => {
+                    alert("No fue posible copiar el enlace. Intenta nuevamente.");
+                });
+        })
+    })
+    document.querySelectorAll("[copy-btn-public]").forEach(btn => {
+        btn.addEventListener("click", event => {
+            event.preventDefault();
+            const url = document.getElementById("copy-url-public");
+            if (!url) return;
+
+            copyToClipboard(url.value)
+                .then(() => {
+                    document.querySelector("#send-form-public").style.display = "none";
                 })
                 .catch(() => {
                     alert("No fue posible copiar el enlace. Intenta nuevamente.");

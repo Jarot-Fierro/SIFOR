@@ -29,16 +29,33 @@
             </div>
             <div class="form-description txtClr">{{form.description|linebreaksbr}}</div>
         </div>
+{#        {% if funcionario %}#}
+{#            <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-3 mb-4 bg-light border-start border-primary border-4">#}
+{#                <div class="d-flex align-items-center">#}
+{#                    <div class="flex-shrink-0">#}
+{#                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">#}
+{#                            <span class="fw-bold">{{ funcionario.nombre_funcionario|slice:":1" }}</span>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="flex-grow-1 ms-3">#}
+{#                        <p class="mb-0 fw-bold text-primary">Respondiendo como: {{ funcionario.nombre_funcionario }}</p>#}
+{#                        <p class="mb-0 small text-muted">RUT: {{ funcionario.rut }}-{{ funcionario.dv }}</p>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
+{#        {% endif %}#}
         {% if form.collect_email %}
         <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-4 mb-4">
             <h1 class="question-title txtClr h5 mb-3">Correo electrónico: <span class="require-star text-danger">*</span></h1>
-            <input type="email" name="email-address" class="short-answer form-control" placeholder="Tu correo electrónico" required>
+            <input type="email" name="email-address" class="short-answer form-control" placeholder="Tu correo electrónico" required 
+                   {% if funcionario %}value="{{ funcionario.correo }}"{% endif %}>
         </div>
         {% endif %}
         {% if form.collect_rut %}
         <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-4 mb-4">
             <h1 class="question-title txtClr h5 mb-3">RUT: <span class="require-star text-danger">*</span></h1>
-            <input type="text" name="rut-address" id="rut-input" class="short-answer form-control" placeholder="Tu RUT (ej: 12.345.678-9)" required>
+            <input type="text" name="rut-address" id="rut-input" class="short-answer form-control" placeholder="Tu RUT (ej: 12.345.678-9)" required 
+                   {% if funcionario %}value="{{ funcionario.rut }}-{{ funcionario.dv }}"{% endif %}>
             <div class="invalid-feedback">
                 Por favor, ingresa un RUT válido.
             </div>

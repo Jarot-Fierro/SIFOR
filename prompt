@@ -1,0 +1,53 @@
+Necesito implementar un sistema de validación segura para formularios en Django, basado en el modelo de datos que ya
+tengo definido. Actualmente tengo los modelos Form, Funcionario, Responses y otros relacionados. El objetivo es evitar
+que una persona pueda suplantar a otra votando en un formulario, es decir, que alguien ponga el RUT de otro funcionario
+pero su propio correo electrónico.
+
+Para lograr esto, necesito agregar dos nuevos modelos. El primero es FormAuthorization, que servirá para autorizar qué
+funcionarios pueden responder cada formulario. Este modelo debe tener una relación ForeignKey con Form y con Funcionario,
+y debe tener un UniqueTogether para evitar duplicados. El segundo modelo es FormToken, que almacenará los tokens de acceso
+temporales. Este debe incluir campos para form, funcionario, un token único (hash), fecha de expiración, un booleano de usado,
+y fecha de creación.
+
+El flujo que necesito implementar es el siguiente. Primero, cuando un funcionario accede a un enlace público del tipo
+/form/{codigo}/validate/, debe ver una página simple con dos campos: RUT y correo electrónico. Al enviar el formulario,
+el sistema debe validar que exista un Funcionario con ese RUT, si existe el Funcionario (actualmente ningun funcionario
+ tiene correo registrado) se guarda en el registro el correo al registro con el RUT correspondiente, ademas se valida si
+ esté está activo, que esté autorizado para ese formulario (ya sea porque existe un registro en FormAuthorization o porque el formulario es público), y que no haya
+votado previamente (revisando en Responses). Si all es correcto, debe generar un token único, guardarlo en FormToken
+con expiración de 2 horas, guardar el token en sesión, y luego redirigir al funcionario a la vista del formulario real.
+Opcionalmente, también debe enviar un correo al funcionario con un enlace directo que incluya el token.
+
+La vista del formulario real debe estar en /form/{codigo}/view/ y solo debe ser accesible si existe un token válido en
+sesión (que no haya expirado ni sido usado). Al cargar la vista, debe mostrar el formulario con las preguntas
+correspondientes. Al enviar las respuestas, debe guardar la respuesta en Responses, marcar el token como usado,
+limpiar la sesión, y mostrar el mensaje de confirmación. Si alguien intenta acceder sin token válido, debe redirigir
+a la página de validación con un mensaje de advertencia.
+
+También necesito una vista de administrador en /admin/form/{codigo}/authorize/ que permita al creador del formulario
+autorizar funcionarios fácilmente. Esta vista debe mostrar un textarea donde se puedan pegar RUTs (uno por línea) y al
+enviar, buscar cada RUT en Funcionario y crear los registros en FormAuthorization. También debe mostrar la lista actual
+de funcionarios autorizados para ese formulario con su nombre, RUT y correo, y permitir eliminar autorizaciones individuales.
+
+En cuanto a los templates, necesito crear tres nuevos HTML. El primero es validate_form.html, que debe ser un formulario
+centrado con campos de RUT y correo, mostrar mensajes de error usando el sistema de messages de Django, y tener un diseño
+responsive con Bootstrap si es posible. El segundo es view_form.html, que debe mostrar el formulario real con las preguntas,
+y debe mostrar los datos del funcionario autenticado (nombre y RUT) en la parte superior como confirmación de quién está
+ respondiendo. El tercero es admin_authorize_users.html, que debe tener dos secciones: un área para agregar nuevos RUTs
+ y una tabla con los funcionarios ya autorizados.
+
+Además, necesito modificar ligeramente el modelo Responses actual. Actualmente tiene un campo responder que es ForeignKey
+ a Funcionario, pero es opcional (blank=True, null=True). Para este nuevo flujo, debo asegurarme de que cuando un funcionario
+ valida su identidad y responde, se guarde correctamente su referencia en ese campo. La respuesta debe quedar asociada al
+  funcionario que realmente respondió, no al RUT que alguien haya escrito manualmente.
+
+Si el formulario no requiere autenticación,
+el flujo actual sin validación debe seguir funcionando normalmente, mostrando el formulario directamente sin pedir RUT y correo.
+
+Por último, necesito las URLs correspondientes para estas tres nuevas vistas, y debo asegurarme de que las vistas
+existentes (como la creación de formularios) no se vean afectadas. La vista de creación de formularios ya tiene el campo
+authenticated_responder que debo respetar.
+
+¿Podrías generarme el código completo para implementar esto, incluyendo los modelos, las vistas, las URLs, los templates
+y cualquier otra modificación necesaria en los archivos existentes? Por favor, indícame claramente qué archivos debo crear
+o modificar y el código correspondiente para cada uno.

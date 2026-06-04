@@ -19,8 +19,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 import itertools
+import secrets
+import hashlib
 
-from .models import User, Choices, Questions, Answer, Form, Responses, Establecimiento
+from .models import User, Choices, Questions, Answer, Form, Responses, Establecimiento, Funcionario, FormToken
+from django.contrib import messages
 
 
 # Create your views here.
@@ -915,22 +918,105 @@ def view_form(request, code):
         return HttpResponseRedirect(reverse('404'))
     else:
         formInfo = formInfo[0]
+    
     if not _is_public_form_for_visit(request.user, formInfo):
         return HttpResponseRedirect(reverse("403"))
-    if request.user.is_authenticated and formInfo.authenticated_responder:
-        if Responses.objects.filter(response_to=formInfo, responder=request.user).exists():
-            logout(request)
-            return HttpResponseRedirect(reverse("login"))
+    
+    # Recuperar token de la sesión si existe (independientemente de si es obligatorio o no)
+    token_str = request.session.get(f'form_token_{code}')
+    funcionario_validado = None
+    if token_str:
+        token_obj = FormToken.objects.filter(token=token_str, form=formInfo).first()
+        if token_obj and token_obj.is_valid():
+            funcionario_validado = token_obj.funcionario
+    
+    # Nuevo flujo de validación segura
     if formInfo.authenticated_responder:
-        if not request.user.is_authenticated:
-            return HttpResponseRedirect(reverse("login"))
-    response = render(request, "index/view_form.html", {
-        "form": formInfo
-    })
+        if not funcionario_validado:
+            messages.warning(request, "Su sesión de validación ha expirado o no ha validado su identidad.")
+            return HttpResponseRedirect(reverse("validate_form_identity", args=[code]))
+        
+        return render(request, "index/view_form.html", {
+            "form": formInfo,
+            "funcionario": funcionario_validado
+        })
+
+    # Flujo normal (si no requiere autenticación obligatoria)
+    context = {"form": formInfo}
+    if funcionario_validado:
+        context["funcionario"] = funcionario_validado
+
+    response = render(request, "index/view_form.html", context)
     response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response["Pragma"] = "no-cache"
     response["Expires"] = "0"
     return response
+
+
+def validate_form_identity(request, code):
+    form_info = Form.objects.filter(code=code).first()
+    if not form_info:
+        return HttpResponseRedirect(reverse('404'))
+
+    if request.method == "POST":
+        rut = request.POST.get("rut", "").strip()
+        email = request.POST.get("email", "").strip()
+
+        if not rut or not email:
+            messages.error(request, "Todos los campos son obligatorios.")
+            return render(request, "index/validate_form.html", {"form": form_info})
+
+        if not _validate_rut(rut):
+            messages.error(request, "El RUT ingresado no es válido (ej: 12.345.678-9).")
+            return render(request, "index/validate_form.html", {"form": form_info})
+
+        # Normalizar RUT
+        rut_parts = rut.split('-')
+        rut_body = rut_parts[0].replace('.', '')
+        dv = rut_parts[1].upper()
+
+        funcionario = Funcionario.objects.filter(rut=rut_body, dv=dv).first()
+
+        if not funcionario:
+            messages.error(request, "Funcionario no encontrado en la base de datos.")
+            return render(request, "index/validate_form.html", {"form": form_info})
+
+        if not funcionario.activo:
+            messages.error(request, "El funcionario no se encuentra activo.")
+            return render(request, "index/validate_form.html", {"form": form_info})
+
+        # Guardar/actualizar correo
+        funcionario.correo = email
+        funcionario.save()
+
+        # Validar si ya votó
+        # Verificamos directamente en Responses
+        if Responses.objects.filter(response_to=form_info, responder=funcionario).exists():
+            messages.warning(request, "Usted ya ha enviado una respuesta para esta encuesta.")
+            return HttpResponseRedirect(reverse("already_voted", args=[code]))
+
+        # Generar token
+        token_str = secrets.token_hex(32)
+        expiration = timezone.now() + timezone.timedelta(hours=2)
+        FormToken.objects.create(
+            form=form_info,
+            funcionario=funcionario,
+            token=token_str,
+            expiration_date=expiration
+        )
+
+        request.session[f'form_token_{code}'] = token_str
+        
+        return HttpResponseRedirect(reverse("view_form", args=[code]))
+
+    return render(request, "index/validate_form.html", {"form": form_info})
+
+
+def view_form_with_token(request, code):
+    # Esta vista es un alias para view_form que asegura el flujo de token
+    return view_form(request, code)
+
+
 
 
 def get_client_ip(request):
@@ -1147,37 +1233,66 @@ def preview_submission_confirmation(request):
 
 
 def submit_form(request, code):
-    formInfo = Form.objects.filter(code=code)
+    formInfo = Form.objects.filter(code=code).first()
     # Checking if form exists
-    if formInfo.count() == 0:
+    if not formInfo:
         return HttpResponseRedirect(reverse('404'))
-    else:
-        formInfo = formInfo[0]
+    
     if not _is_public_form_for_visit(request.user, formInfo):
         return HttpResponseRedirect(reverse("403"))
-    # if request.user.is_authenticated and Responses.objects.filter(response_to=formInfo, responder=request.user).exists():
-    #     if formInfo.authenticated_responder:
-    #         logout(request)
-    #         return HttpResponseRedirect(reverse("login"))
-    #     return HttpResponseRedirect(reverse("already_voted", args=[code]))
-    # if formInfo.authenticated_responder:
-    #     if not request.user.is_authenticated:
-    #         return HttpResponseRedirect(reverse("login"))
+
+    funcionario = None
+    token_obj = None
+
+    # Intentar obtener el token de la sesión siempre que sea posible
+    token_str = request.session.get(f'form_token_{code}')
+    if token_str:
+        token_obj = FormToken.objects.filter(token=token_str, form=formInfo).first()
+        if token_obj:
+            if token_obj.used:
+                return render(request, "index/message.html", {
+                    "title": "Token ya utilizado",
+                    "message": "Este token ya ha sido utilizado. No puede votar nuevamente.",
+                    "form": formInfo
+                }, status=403)
+            
+            if not token_obj.is_valid():
+                return render(request, "index/message.html", {
+                    "title": "Token expirado",
+                    "message": "El token de acceso ha expirado.",
+                    "form": formInfo
+                }, status=403)
+                
+            funcionario = token_obj.funcionario
+            
+            # Validar si ya existe una respuesta para este funcionario en este formulario
+            if Responses.objects.filter(response_to=formInfo, responder=funcionario).exists():
+                # Si ya votó, marcamos el token como usado por seguridad y bloqueamos
+                if not token_obj.used:
+                    token_obj.used = True
+                    token_obj.save()
+                return HttpResponseRedirect(reverse("already_voted", args=[code]))
+
+    # Validar si requiere autenticación obligatoria por token
+    if formInfo.authenticated_responder and not token_obj:
+        return render(request, "index/message.html", {
+            "title": "Autenticación requerida",
+            "message": "Debe validar su identidad para responder este formulario.",
+            "form": formInfo
+        }, status=403)
+
     if request.method == "POST":
         cleaned_answers, email_value, rut_value, validation_error = _validate_form_submission_data(formInfo, request.POST)
         if validation_error:
             return HttpResponse(validation_error, status=400)
 
-        # RUT normalization and validation against Funcionario table
-        funcionario = None
-        if formInfo.collect_rut and rut_value:
+        # RUT normalization and validation against Funcionario table (legacy flow or fallback)
+        if not funcionario and formInfo.collect_rut and rut_value:
             try:
-                # Format: 20.930.055-9 -> body: 20930055, dv: 9
                 rut_parts = rut_value.split('-')
                 rut_body = rut_parts[0].replace('.', '')
                 dv = rut_parts[1].upper() if len(rut_parts) > 1 else ""
                 
-                from .models import Funcionario
                 funcionario = Funcionario.objects.filter(rut=rut_body, dv=dv, activo=True).first()
                 
                 if not funcionario:
@@ -1187,7 +1302,6 @@ def submit_form(request, code):
                         "form": formInfo
                     }, status=403)
 
-                # Verificamos si el usuario ya votó
                 if Responses.objects.filter(response_to=formInfo, responder=funcionario).exists():
                     return render(request, "index/message.html", {
                         "title": "Ya has votado",
@@ -1206,46 +1320,38 @@ def submit_form(request, code):
         
         if funcionario:
             response_data["responder"] = funcionario
-        elif request.user.is_authenticated:
-            # Fallback to authenticated user if RUT was not collected but user is logged in
-            # though the issue suggests using Funcionario obtained from RUT.
-            # We keep request.user as fallback if it's already a Funcionario or related.
-            # But according to instructions: "Esa lógica debe eliminarse y reemplazarse por la asignación de la instancia de Funcionario obtenida durante la validación"
-            pass 
+            response_data["responder_rut"] = f"{funcionario.rut}-{funcionario.dv}"
+            response_data["responder_email"] = funcionario.correo or email_value
+        else:
+            if formInfo.collect_email:
+                response_data["responder_email"] = email_value
+            if formInfo.collect_rut:
+                response_data["responder_rut"] = rut_value
 
-        if formInfo.collect_email:
-            response_data["responder_email"] = email_value
-        if formInfo.collect_rut:
-            response_data["responder_rut"] = rut_value
-
-        response = Responses(**response_data)
-        response.save()
+        response = Responses.objects.create(**response_data)
         
-        # Ensure response_to is correctly associated (already in response_data, but for double checking persistence)
-        if response.response_to != formInfo:
-            response.response_to = formInfo
-            response.save()
         questions_by_id = {question.id: question for question in formInfo.questions.all()}
         for question_id, question_answers in cleaned_answers.items():
             question = questions_by_id.get(question_id)
             if not question:
-                return HttpResponse("Pregunta inválida.", status=400)
+                continue
             for answer_value in question_answers:
-                answer = Answer(answer=answer_value, answer_to=question)
-                answer.save()
+                answer = Answer.objects.create(answer=answer_value, answer_to=question)
                 response.response.add(answer)
-                response.save()
 
-        # _send_submission_email(request, formInfo, cleaned_answers, email_value, funcionario)
+        # Marcar token como usado y limpiar sesión
+        if token_obj:
+            token_obj.used = True
+            token_obj.save()
+            if f'form_token_{code}' in request.session:
+                del request.session[f'form_token_{code}']
 
         return render(request, "index/form_response.html", {
             "form": formInfo,
             "code": response_code,
-            # "auto_logout": formInfo.authenticated_responder and request.user.is_authenticated,
         })
 
 
-@login_required(login_url="login")
 def already_voted(request, code):
     formInfo = Form.objects.filter(code=code)
     if formInfo.count() == 0:

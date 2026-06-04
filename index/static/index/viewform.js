@@ -121,5 +121,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.target.setCustomValidity("");
             }
         });
+        if (rutInput.value) {
+            rutInput.dispatchEvent(new Event('input'));
+        }
     }
 })

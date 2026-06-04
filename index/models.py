@@ -121,6 +121,23 @@ class Responses(models.Model):
         verbose_name_plural = 'Envío Formularios'
 
 
+
+class FormToken(models.Model):
+    form = models.ForeignKey(Form, on_delete=models.CASCADE)
+    funcionario = models.ForeignKey('index.Funcionario', on_delete=models.CASCADE)
+    token = models.CharField(max_length=64, unique=True)
+    expiration_date = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        from django.utils import timezone
+        return not self.used and self.expiration_date > timezone.now()
+
+    def __str__(self):
+        return f"Token para {self.funcionario} - {self.form}"
+
+
 class Comuna(models.Model):
     nombre = models.CharField(max_length=100, unique=True, null=False, verbose_name='Nombre')
 
