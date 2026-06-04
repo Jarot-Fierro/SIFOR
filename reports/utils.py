@@ -329,7 +329,6 @@ def export_form_responses_to_excel(form, filename=None):
     # ===== HEADERS FIJOS =====
     headers = [
         "Código Respuesta",
-        "Usuario",
         "Correo",
         "Establecimiento",
         # "IP"
@@ -359,7 +358,7 @@ def export_form_responses_to_excel(form, filename=None):
 
         row = [
             response.response_code,
-            responder.username if responder else '',
+            # responder.username if responder else '',
             response.responder_email,
             responder.establecimiento.alias if responder and responder.establecimiento else '',
             # response.responder_ip

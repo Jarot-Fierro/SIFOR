@@ -1181,7 +1181,19 @@ def submit_form(request, code):
                 funcionario = Funcionario.objects.filter(rut=rut_body, dv=dv, activo=True).first()
                 
                 if not funcionario:
-                    return HttpResponse("Usuario no autorizado para responder la encuesta o RUT no encontrado.", status=403)
+                    return render(request, "index/message.html", {
+                        "title": "Usuario no autorizado",
+                        "message": "Usted no se encuentra autorizado para responder esta encuesta o su RUT no fue encontrado en nuestra plataforma.",
+                        "form": formInfo
+                    }, status=403)
+
+                # Verificamos si el usuario ya votó
+                if Responses.objects.filter(response_to=formInfo, responder=funcionario).exists():
+                    return render(request, "index/message.html", {
+                        "title": "Ya has votado",
+                        "message": "Usted ya ha enviado una respuesta para esta encuesta. Solo se permite un envío por funcionario.",
+                        "form": formInfo
+                    }, status=403)
             except Exception as e:
                 return HttpResponse(f"Error al validar el funcionario: {str(e)}", status=400)
 
@@ -1224,12 +1236,12 @@ def submit_form(request, code):
                 response.response.add(answer)
                 response.save()
 
-        _send_submission_email(request, formInfo, cleaned_answers, email_value, funcionario)
+        # _send_submission_email(request, formInfo, cleaned_answers, email_value, funcionario)
 
         return render(request, "index/form_response.html", {
             "form": formInfo,
             "code": response_code,
-            "auto_logout": formInfo.authenticated_responder and request.user.is_authenticated,
+            # "auto_logout": formInfo.authenticated_responder and request.user.is_authenticated,
         })
 
 
