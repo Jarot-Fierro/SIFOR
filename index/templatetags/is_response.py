@@ -8,6 +8,15 @@ def get_responses(responses, pk):
 @register.filter
 def is_response(responses, pk):
     for i in responses:
-        if int(i.answer) == int(pk):
-            return True
+        # Robustez ante comas (formato viejo/test) y soporte para formato nuevo
+        vals = str(i.answer).split(',')
+        for v in vals:
+            v = v.strip()
+            if not v:
+                continue
+            try:
+                if int(v) == int(pk):
+                    return True
+            except (ValueError, TypeError):
+                continue
     return False

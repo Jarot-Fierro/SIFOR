@@ -1378,8 +1378,17 @@ def responses(request, code):
         if question.question_type == "multiple choice" or question.question_type == "checkbox":
             choiceAnswered[question.question] = choiceAnswered.get(question.question, {})
             for answer in answers:
-                choice = answer.answer_to.choices.get(id=answer.answer).choice
-                choiceAnswered[question.question][choice] = choiceAnswered.get(question.question, {}).get(choice, 0) + 1
+                # Handle comma-separated IDs (for robustness) and single IDs
+                choice_ids = answer.answer.split(',')
+                for c_id in choice_ids:
+                    c_id = c_id.strip()
+                    if not c_id:
+                        continue
+                    try:
+                        choice = answer.answer_to.choices.get(id=c_id).choice
+                        choiceAnswered[question.question][choice] = choiceAnswered[question.question].get(choice, 0) + 1
+                    except (ValueError, Choices.DoesNotExist):
+                        continue
         responsesSummary.append({"question": question, "answers": answers})
     for answr in choiceAnswered:
         filteredResponsesSummary[answr] = {}
@@ -1449,7 +1458,15 @@ def exportcsv(request, code):
             if question.question_type not in ['multiple choice', 'checkbox']:
                 response_data.append(answer.answer if answer else '')
             elif question.question_type == "multiple choice":
-                response_data.append(answer.answer_to.choices.get(id=answer.answer).choice if answer else '')
+                if answer:
+                    try:
+                        # Handle potential comma-separated values for robustness
+                        first_id = str(answer.answer).split(',')[0].strip()
+                        response_data.append(answer.answer_to.choices.get(id=first_id).choice)
+                    except (ValueError, Choices.DoesNotExist, IndexError):
+                        response_data.append('')
+                else:
+                    response_data.append('')
             elif question.question_type == "checkbox":
                 if answer and question.question_type == 'checkbox':
                     checkbox_choices = retrieve_checkbox_choices(response, answer.answer_to)
@@ -1489,15 +1506,27 @@ def response(request, code, response_code):
                 answerKey = None
                 for j in i.answer_to.choices.all():
                     if j.is_answer: answerKey = j.id
-                if answerKey is not None and int(answerKey) == int(i.answer):
-                    score += i.answer_to.score
+                if answerKey is not None:
+                    try:
+                        if int(answerKey) == int(i.answer):
+                            score += i.answer_to.score
+                    except (ValueError, TypeError):
+                        pass
         _temp = []
         for i in responseInfo.response.all():
             if i.answer_to.question_type == "checkbox" and i.answer_to.pk not in _temp:
                 answers = []
                 answer_keys = []
                 for j in responseInfo.response.filter(answer_to__pk=i.answer_to.pk):
-                    answers.append(int(j.answer))
+                    # Handle comma-separated IDs for robustness
+                    vals = str(j.answer).split(',')
+                    for v in vals:
+                        v = v.strip()
+                        if v:
+                            try:
+                                answers.append(int(v))
+                            except (ValueError, TypeError):
+                                continue
                     for k in j.answer_to.choices.all():
                         if k.is_answer and k.pk not in answer_keys: answer_keys.append(k.pk)
                     _temp.append(i.answer_to.pk)
@@ -1711,6 +1740,78 @@ def delete_responses(request, code):
                 i.delete()
             response.delete()
         return JsonResponse({"message": "Success"})
+
+
+@login_required(login_url="login")
+def generate_test_responses(request, code):
+    formInfo = Form.objects.filter(code=code).first()
+    if not formInfo:
+        return HttpResponseRedirect(reverse('404'))
+
+    if not _can_manage_form(request.user, formInfo):
+        return HttpResponseRedirect(reverse("403"))
+
+    if request.method == "POST":
+        try:
+            count = int(request.POST.get("count", 0))
+        except ValueError:
+            return HttpResponse("Cantidad inválida", status=400)
+
+        if count <= 0:
+            return redirect('responses', code=code)
+
+        # Obtener funcionarios que no han respondido aún a este formulario
+        responded_ids = Responses.objects.filter(response_to=formInfo, responder__isnull=False).values_list('responder_id', flat=True)
+        available_funcionarios = list(Funcionario.objects.filter(activo=True).exclude(id__in=responded_ids))
+
+        if not available_funcionarios:
+            messages.warning(request, "No hay funcionarios disponibles para generar respuestas de prueba.")
+            return redirect('responses', code=code)
+
+        num_to_generate = min(count, len(available_funcionarios))
+        selected_funcionarios = random.sample(available_funcionarios, num_to_generate)
+
+        questions = formInfo.questions.all()
+
+        for funcionario in selected_funcionarios:
+            response_code = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(20))
+            response = Responses.objects.create(
+                response_code=response_code,
+                response_to=formInfo,
+                responder=funcionario,
+                responder_rut=f"{funcionario.rut}-{funcionario.dv}",
+                responder_email=funcionario.correo or f"test_{response_code}@example.com",
+                responder_ip="127.0.0.1",
+                is_test=True
+            )
+
+            for question in questions:
+                answer_values = []
+                if question.question_type == "short":
+                    answer_values.append(f"Respuesta de prueba short {response_code[:5]}")
+                elif question.question_type == "paragraph":
+                    answer_values.append(f"Esta es una respuesta de prueba de tipo párrafo generada automáticamente para el funcionario {funcionario.nombre_funcionario}.")
+                elif question.question_type == "multiple choice":
+                    choices = list(question.choices.all())
+                    if choices:
+                        answer_values.append(str(random.choice(choices).id))
+                elif question.question_type == "checkbox":
+                    choices = list(question.choices.all())
+                    if choices:
+                        # Seleccionar 1 o más opciones
+                        num_choices = random.randint(1, len(choices))
+                        selected_choices = random.sample(choices, num_choices)
+                        for c in selected_choices:
+                            answer_values.append(str(c.id))
+
+                for val in answer_values:
+                    ans = Answer.objects.create(answer=val, answer_to=question)
+                    response.response.add(ans)
+
+        messages.success(request, f"Se han generado {num_to_generate} respuestas de prueba exitosamente.")
+        return redirect('responses', code=code)
+
+    return redirect('responses', code=code)
 
 
 # Error handler

@@ -3,4 +3,5 @@ register = template.Library()
 
 @register.filter
 def get_response(responses, pk):
-    return responses.response.get(answer_to__pk = pk).answer
+    resp = responses.response.filter(answer_to__pk = pk).first()
+    return resp.answer if resp else ""

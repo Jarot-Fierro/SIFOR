@@ -241,4 +241,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         })
     }
+    const btnTestResponses = document.querySelector("#btn-test-responses");
+    if(btnTestResponses){
+        btnTestResponses.addEventListener('click', () => {
+            document.querySelector("#modal-test-responses").style.display = "block";
+        });
+        document.querySelector("#close-test-responses").addEventListener('click', () => {
+            document.querySelector("#modal-test-responses").style.display = "none";
+        });
+        document.querySelector("#cancel-test-responses").addEventListener('click', () => {
+            document.querySelector("#modal-test-responses").style.display = "none";
+        });
+        const originalOnClick = window.onclick;
+        window.onclick = e => {
+            if (originalOnClick) originalOnClick(e);
+            if(e.target == document.querySelector("#modal-test-responses")) document.querySelector("#modal-test-responses").style.display = "none";
+        }
+    }
 })

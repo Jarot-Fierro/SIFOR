@@ -112,6 +112,7 @@ class Responses(models.Model):
     responder_email = models.EmailField(blank=True, verbose_name="Correo del participante")
     responder_rut = models.CharField(max_length=12, blank=True, verbose_name="RUT del participante")
     response = models.ManyToManyField(Answer, related_name="response", verbose_name="Respuestas")
+    is_test = models.BooleanField(default=False, verbose_name="Es de prueba")
 
     def __str__(self):
         return f"Respuesta {self.response_code} - {self.response_to.title}"

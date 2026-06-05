@@ -21,21 +21,37 @@
             <ul class="list-group list-group-flush mb-3">
                 {% for i in responses %}
                     {% if form.collect_email and form.collect_rut %}
-                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_email}} ({{i.responder_rut}})</a></li>
+                        <li class="list-group-item px-0">
+                            <a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_email}} ({{i.responder_rut}})</a>
+                            {% if i.is_test %}<span class="badge text-bg-warning ms-2">Prueba</span>{% endif %}
+                        </li>
                     {% elif form.collect_email %}
-                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_email}}</a></li>
+                        <li class="list-group-item px-0">
+                            <a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_email}}</a>
+                            {% if i.is_test %}<span class="badge text-bg-warning ms-2">Prueba</span>{% endif %}
+                        </li>
                     {% elif form.collect_rut %}
-                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_rut}}</a></li>
+                        <li class="list-group-item px-0">
+                            <a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_rut}}</a>
+                            {% if i.is_test %}<span class="badge text-bg-warning ms-2">Prueba</span>{% endif %}
+                        </li>
                     {% elif form.authenticated_responder %}
-                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder.username}}</a></li>
+                        <li class="list-group-item px-0">
+                            <a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder.username}}</a>
+                            {% if i.is_test %}<span class="badge text-bg-warning ms-2">Prueba</span>{% endif %}
+                        </li>
                     {% else %}
-                        <li class="list-group-item px-0"><a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_ip}}</a></li>
+                        <li class="list-group-item px-0">
+                            <a href = "{% url 'response' form.code i.response_code %}" class="link">Respuesta de {{i.responder_ip}}</a>
+                            {% if i.is_test %}<span class="badge text-bg-warning ms-2">Prueba</span>{% endif %}
+                        </li>
                     {% endif %}
                 {% endfor %}
             </ul>
             <div class="d-flex flex-wrap gap-2">
                 <a href="{% url 'export_csv' form.code  %}" class="btn btn-success">Descargar CSV</a>
                 <a href="{% url 'export_form' form.code  %}" class="btn btn-success">Descargar EXCEL</a>
+                <a href="{% url 'export_pdf' form.code %}" class="btn btn-danger">Descargar PDF</a>
             </div>
             {% else %}
             <h1 class="response-title h4 mb-0">0 respuestas</h1>
@@ -75,6 +91,7 @@
             {% endfor %}
         </div>
         <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-primary" id="btn-test-responses">Registrar respuestas de prueba</button>
             <button class="btn btn-danger" id="delete-responses">Eliminar todas las respuestas</button>
         </div>
     <div class="question-options d-flex flex-column align-items-center gap-3 bg-white rounded-pill shadow-sm p-2 position-fixed end-0 top-50 translate-middle-y me-3">
@@ -122,6 +139,25 @@
             </datalist>
         </div>
     </div>
+    <div class="modal" id="modal-test-responses">
+        <div class="modal-content bg-white rounded-4 shadow p-4 border-0">
+            <span class="modal-close-btn" id="close-test-responses">&times;</span>
+            <h1 class="modal-title">Respuestas de prueba</h1>
+            <p class="text-muted">Ingresa la cantidad de respuestas de prueba que deseas generar automáticamente.</p>
+            <form id="form-test-responses" method="POST" action="{% url 'generate_test_responses' form.code %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="input-count-test" class="form-label">Cantidad de respuestas:</label>
+                    <input type="number" name="count" id="input-count-test" class="form-control" value="10" min="1" max="500" required>
+                </div>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" id="cancel-test-responses">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Generar</button>
+                </div>
+            </form>
+        </div>
+    </div>
     {% include 'index/components/modal_settings.html' %}
+</div>
 </div>
 {% endblock %}
