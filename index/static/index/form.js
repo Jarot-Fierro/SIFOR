@@ -239,6 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const authenticatedResponderElement = document.querySelector("#authenticated_responder");
         const collectEmail = document.querySelector("#collect_email").checked;
         const collectRut = document.querySelector("#collect_rut").checked;
+        const collectToken = document.querySelector("#collect_token").checked;
 
         fetch(`${window.location.pathname.replace(/\/edit$/, '')}/edit_setting`, {
             method: "POST",
@@ -246,8 +247,11 @@ document.addEventListener("DOMContentLoaded", () => {
             body: JSON.stringify({
                 "collect_email": collectEmail,
                 "collect_rut": collectRut,
+                "collect_token": collectToken,
                 "is_quiz": isQuizElement ? isQuizElement.checked : false,
                 "is_public": document.querySelector("#is_public").checked,
+                "start_date": document.querySelector("#start_date").value,
+                "end_date": document.querySelector("#end_date").value,
                 "authenticated_responder": authenticatedResponderElement ? authenticatedResponderElement.checked : false,
                 "confirmation_message": document.querySelector("#comfirmation_message").value,
                 "edit_after_submit": document.querySelector("#edit_after_submit").checked,
@@ -283,6 +287,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         placeholder = "RUT" />
                         <p class="collect-rut-desc mb-0 mt-2 small">Este formulario está recopilando RUTs. <span class="open-setting text-primary" role="button">Cambiar configuración</span></p>`
                         document.querySelector("#form-head").appendChild(collect_rut)
+                    }
+                }
+                if(!collectToken){
+                    if(document.querySelector(".collect-token")) document.querySelector(".collect-token").parentNode.removeChild(document.querySelector(".collect-token"))
+                }else{
+                    if(!document.querySelector(".collect-token")){
+                        let collect_token = document.createElement("div");
+                        collect_token.classList.add("collect-token", "txt-clr", "alert", "alert-light", "mt-3", "mb-0", "border")
+                        collect_token.innerHTML = `<h3 class="question-title h5">Token de Acceso <span class="require-star text-danger">*</span></h3>
+                        <input type="text" autoComplete="off" aria-label="Token" disabled dir = "auto" class="form-control"
+                        placeholder = "Token de Acceso" />
+                        <p class="collect-token-desc mb-0 mt-2 small">Este formulario está recopilando tokens de acceso. <span class="open-setting text-primary" role="button">Cambiar configuración</span></p>`
+                        document.querySelector("#form-head").appendChild(collect_token)
                     }
                 }
                 if(isQuizElement && isQuizElement.checked){

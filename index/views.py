@@ -11,7 +11,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import validate_email
-from django.db import IntegrityError
+from django.db import IntegrityError, models
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
@@ -68,9 +68,17 @@ def _is_visit_user(user):
 
 
 def _is_public_form_for_visit(user, form):
+    if not form.is_public:
+        return False
+    
+    # Validar rango de fechas
+    now = timezone.now()
+    if form.start_date and now < form.start_date:
+        return False
+    if form.end_date and now > form.end_date:
+        return False
+
     if _is_visit_user(user):
-        if not form.is_public:
-            return False
         if not user.establecimiento:
             return False
         return form.establecimientos.filter(id=user.establecimiento_id).exists()
@@ -103,9 +111,14 @@ def view_forms_visits(request):
 
     user_establecimiento = request.user.establecimiento
 
+    now = timezone.now()
     visible_forms = Form.objects.filter(
         is_public=True,
         establecimientos=user_establecimiento,
+    ).filter(
+        models.Q(start_date__isnull=True) | models.Q(start_date__lte=now)
+    ).filter(
+        models.Q(end_date__isnull=True) | models.Q(end_date__gte=now)
     ).exclude(
         creator=request.user
     ).distinct()
@@ -595,8 +608,11 @@ def edit_setting(request, code):
 
         formInfo.collect_email = data.get("collect_email") if "collect_email" in data else formInfo.collect_email
         formInfo.collect_rut = data.get("collect_rut") if "collect_rut" in data else formInfo.collect_rut
+        formInfo.collect_token = data.get("collect_token") if "collect_token" in data else formInfo.collect_token
         formInfo.is_quiz = data.get("is_quiz") if "is_quiz" in data else formInfo.is_quiz
         formInfo.is_public = data.get("is_public") if "is_public" in data else formInfo.is_public
+        formInfo.start_date = data.get("start_date") if data.get("start_date") else None
+        formInfo.end_date = data.get("end_date") if data.get("end_date") else None
         formInfo.authenticated_responder = data.get("authenticated_responder") if "authenticated_responder" in data else formInfo.authenticated_responder
         formInfo.confirmation_message = data.get("confirmation_message") if "confirmation_message" in data else formInfo.confirmation_message
         formInfo.edit_after_submit = data.get("edit_after_submit") if "edit_after_submit" in data else formInfo.edit_after_submit
@@ -953,10 +969,38 @@ def view_form(request, code):
     return response
 
 
+def _send_token_email(request, form_info, funcionario, token):
+    if not funcionario.correo:
+        return
+    
+    context = {
+        "form": form_info,
+        "funcionario": funcionario,
+        "token": token,
+        "request": request,
+    }
+    
+    html_content = render_to_string("index/emails/token_email.html", context)
+    subject = f"Token de acceso - {form_info.title}"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    
+    email_message = EmailMultiAlternatives(
+        subject=subject,
+        body=f"Tu token de acceso para el formulario {form_info.title} es: {token}",
+        from_email=from_email,
+        to=[funcionario.correo],
+    )
+    email_message.attach_alternative(html_content, "text/html")
+    email_message.send(fail_silently=True)
+
+
 def validate_form_identity(request, code):
     form_info = Form.objects.filter(code=code).first()
     if not form_info:
         return HttpResponseRedirect(reverse('404'))
+
+    if not _is_public_form_for_visit(request.user, form_info):
+        return HttpResponseRedirect(reverse("403"))
 
     if request.method == "POST":
         rut = request.POST.get("rut", "").strip()
@@ -1002,8 +1046,11 @@ def validate_form_identity(request, code):
             form=form_info,
             funcionario=funcionario,
             token=token_str,
+            tokencopy=token_str,
             expiration_date=expiration
         )
+
+        _send_token_email(request, form_info, funcionario, token_str)
 
         request.session[f'form_token_{code}'] = token_str
         
@@ -1052,7 +1099,7 @@ def _validate_form_submission_data(form_info, post_data):
             return None, None, None, "El RUT no es válido."
 
     question_ids = {str(question.id) for question in form_info.questions.all()}
-    allowed_post_keys = question_ids | {"csrfmiddlewaretoken", "email-address", "rut-address"}
+    allowed_post_keys = question_ids | {"csrfmiddlewaretoken", "email-address", "rut-address", "token-address"}
     invalid_post_keys = [key for key in post_data.keys() if key not in allowed_post_keys]
     if invalid_post_keys:
         return None, None, None, "Se recibieron preguntas inválidas."
@@ -1286,6 +1333,18 @@ def submit_form(request, code):
         if validation_error:
             return HttpResponse(validation_error, status=400)
 
+        token_pasted = request.POST.get("token-address", "").strip()
+        if formInfo.collect_token and not token_pasted:
+            return HttpResponse("El token de acceso es obligatorio.", status=400)
+
+        if funcionario and formInfo.collect_token:
+            if token_pasted != token_obj.token:
+                return render(request, "index/message.html", {
+                    "title": "Token inválido",
+                    "message": "El token de acceso ingresado no coincide con su sesión validada.",
+                    "form": formInfo
+                }, status=403)
+
         # RUT normalization and validation against Funcionario table (legacy flow or fallback)
         if not funcionario and formInfo.collect_rut and rut_value:
             try:
@@ -1295,6 +1354,17 @@ def submit_form(request, code):
                 
                 funcionario = Funcionario.objects.filter(rut=rut_body, dv=dv, activo=True).first()
                 
+                if formInfo.collect_token and funcionario:
+                    # Validar el token pegado para este funcionario
+                    token_val = FormToken.objects.filter(form=formInfo, funcionario=funcionario, token=token_pasted).first()
+                    if not token_val or not token_val.is_valid():
+                        return render(request, "index/message.html", {
+                            "title": "Token inválido o expirado",
+                            "message": "El token de acceso ingresado no es válido para este usuario o ya ha expirado.",
+                            "form": formInfo
+                        }, status=403)
+                    token_obj = token_val
+
                 if not funcionario:
                     return render(request, "index/message.html", {
                         "title": "Usuario no autorizado",
@@ -1389,7 +1459,14 @@ def responses(request, code):
                         choiceAnswered[question.question][choice] = choiceAnswered[question.question].get(choice, 0) + 1
                     except (ValueError, Choices.DoesNotExist):
                         continue
-        responsesSummary.append({"question": question, "answers": answers})
+        # Paginación para las respuestas de cada pregunta (si son muchas)
+        # Mostramos solo las primeras 10 en el resumen para no alargar la página
+        total_answers = answers.count()
+        responsesSummary.append({
+            "question": question, 
+            "answers": answers.order_by('-id')[:10], # Limitamos a las últimas 10 en el resumen
+            "total_answers": total_answers
+        })
     for answr in choiceAnswered:
         filteredResponsesSummary[answr] = {}
         keys = choiceAnswered[answr].values()
@@ -1398,13 +1475,26 @@ def responses(request, code):
     # Checking if form creator is user
     if not _can_manage_form(request.user, formInfo):
         return HttpResponseRedirect(reverse("403"))
+
+    # Paginación para respuestas individuales
+    all_responses = Responses.objects.filter(response_to=formInfo).order_by('-id')
+    responses_paginator = Paginator(all_responses, 10)
+    page_responses_num = request.GET.get('page_responses')
+    page_responses_obj = responses_paginator.get_page(page_responses_num)
+
+    # Paginación para resumen de preguntas
+    summary_paginator = Paginator(responsesSummary, 10)
+    page_summary_num = request.GET.get('page_summary')
+    page_summary_obj = summary_paginator.get_page(page_summary_num)
+
     return render(request, "index/responses.html", {
         "form": formInfo,
-        "responses": Responses.objects.filter(response_to=formInfo),
-        "responsesSummary": responsesSummary,
+        "responses": page_responses_obj,
+        "responsesSummary": page_summary_obj,
         "filteredResponsesSummary": filteredResponsesSummary,
         "establecimientos": Establecimiento.objects.all().order_by("nombre"),
-        'section': 'responses'
+        'section': 'responses',
+        "total_responses": all_responses.count()
     })
 
 

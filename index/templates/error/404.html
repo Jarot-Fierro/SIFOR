@@ -35,10 +35,13 @@
 
                 {% else %}
 
-                    <a href="{% url 'login' %}" class="btn btn-dark btn-lg rounded-3">
-                        Ir al inicio de sesión
+                    <a href="#" onclick="window.history.back(); return false;" class="btn btn-dark btn-lg rounded-3">
+                        Volver a la página anterior
                     </a>
 
+                    <button onclick="window.close();" class="btn btn-outline-secondary btn-lg rounded-3">
+                        Cerrar esta ventana
+                    </button>
                 {% endif %}
 
             </div>

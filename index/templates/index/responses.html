@@ -16,8 +16,8 @@
         <span id="bg-color" style="display: none;">{{form.background_color}}</span>
         <span id="text-color" style="display: none;">{{form.text_color}}</span>
         <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4" id="responses">
-            {% if responses.count > 0 %}
-            <h1 class="response-title h4 mb-3">Respuestas individuales:</h1>
+            {% if total_responses > 0 %}
+            <h1 class="response-title h4 mb-3">Respuestas individuales (Total: {{total_responses}}):</h1>
             <ul class="list-group list-group-flush mb-3">
                 {% for i in responses %}
                     {% if form.collect_email and form.collect_rut %}
@@ -48,6 +48,21 @@
                     {% endif %}
                 {% endfor %}
             </ul>
+            <nav aria-label="Pagination for individual responses" class="mb-3">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if responses.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page_responses=1&page_summary={{responsesSummary.number}}">&laquo; primera</a></li>
+                        <li class="page-item"><a class="page-link" href="?page_responses={{ responses.previous_page_number }}&page_summary={{responsesSummary.number}}">anterior</a></li>
+                    {% endif %}
+
+                    <li class="page-item disabled"><span class="page-link">Página {{ responses.number }} de {{ responses.paginator.num_pages }}</span></li>
+
+                    {% if responses.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page_responses={{ responses.next_page_number }}&page_summary={{responsesSummary.number}}">siguiente</a></li>
+                        <li class="page-item"><a class="page-link" href="?page_responses={{ responses.paginator.num_pages }}&page_summary={{responsesSummary.number}}">última &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
             <div class="d-flex flex-wrap gap-2">
                 <a href="{% url 'export_csv' form.code  %}" class="btn btn-success">Descargar CSV</a>
                 <a href="{% url 'export_form' form.code  %}" class="btn btn-success">Descargar EXCEL</a>
@@ -58,16 +73,19 @@
             {% endif %}
         </div>
         <div class="margin-top-bottom box question-box card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4">
-            <h1 class="response-title h4 mb-3">Resumen de preguntas:</h1>
+            <h1 class="response-title h4 mb-3">Resumen de preguntas (Total: {{form.questions.count}}):</h1>
             {% for r in responsesSummary %}
             <div class="response-summary border rounded-3 p-3 mb-3 bg-light-subtle">
-                <h3 class="response-summary-title h5 mb-3">{{r.question.question}}</h3>
+                <h3 class="response-summary-title h5 mb-3 text-primary">{{r.question.question}} ({{r.total_answers}} respuestas)</h3>
                 {% if r.answers|count > 0 or filteredResponsesSummary|get_property:r.question.question|count > 0 %}
                     {% if r.question.question_type == 'short' or r.question.question_type == 'paragraph' %}
                         <ul class="list-group list-group-flush">
                         {% for i in r.answers %}
                             <li class="list-group-item px-0">{{i.answer}}</li>
                         {% endfor %}
+                        {% if r.total_answers > 10 %}
+                            <li class="list-group-item px-0 text-muted small text-danger"><i>Mostrando las últimas 10 respuestas de un total de {{r.total_answers}}. Para ver todas, descargue el reporte.</i></li>
+                        {% endif %}
                         </ul>
                     {% else %}
                             <canvas id="myChart{{r.question.id}}" class="pie-chart"></canvas>
@@ -89,6 +107,21 @@
                 {% endif %}
             </div>
             {% endfor %}
+            <nav aria-label="Pagination for questions summary" class="mb-3">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if responsesSummary.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page_summary=1&page_responses={{responses.number}}">&laquo; primera</a></li>
+                        <li class="page-item"><a class="page-link" href="?page_summary={{ responsesSummary.previous_page_number }}&page_responses={{responses.number}}">anterior</a></li>
+                    {% endif %}
+
+                    <li class="page-item disabled"><span class="page-link">Página {{ responsesSummary.number }} de {{ responsesSummary.paginator.num_pages }}</span></li>
+
+                    {% if responsesSummary.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page_summary={{ responsesSummary.next_page_number }}&page_responses={{responses.number}}">siguiente</a></li>
+                        <li class="page-item"><a class="page-link" href="?page_summary={{ responsesSummary.paginator.num_pages }}&page_responses={{responses.number}}">última &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
         </div>
         <div class="d-flex flex-wrap gap-2">
             <button class="btn btn-primary" id="btn-test-responses">Registrar respuestas de prueba</button>

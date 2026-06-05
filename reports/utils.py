@@ -99,7 +99,7 @@ def _create_styled_table(data, col_widths=None):
     # Estilo base
     style = [
         ('BACKGROUND', (0, 0), (-1, 0), ReportTheme.PRIMARY),
-        ('TEXTCOLOR', (0, 0), (-1, 0), ReportTheme.WHITE),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),

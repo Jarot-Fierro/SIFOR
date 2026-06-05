@@ -1,0 +1,25 @@
+{% extends 'index/layout.html' %}
+{% block body %}
+<div class="container py-5">
+    <div class="card shadow-sm border-0 rounded-4 p-4 mx-auto" style="max-width: 600px;">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-primary">Token de Acceso</h2>
+            <p class="text-muted">Formulario: {{ form.title }}</p>
+        </div>
+        
+        <div class="alert alert-info border-0 rounded-3 p-4 mb-4 text-center">
+            <p class="mb-2">Tu token de acceso es:</p>
+            <h3 class="fw-bold mb-0" style="letter-spacing: 2px; overflow-wrap: break-word;">{{ token }}</h3>
+        </div>
+
+        <p class="mb-4 text-secondary text-center">
+            Copia este token y pégalo en el campo correspondiente del formulario para validar tu identidad.
+        </p>
+
+        <div class="text-center small text-muted border-top pt-3">
+            <p class="mb-0">Este token expirará en 2 horas.</p>
+            <p class="mb-0">Si no solicitaste este token, puedes ignorar este correo.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

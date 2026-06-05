@@ -7,10 +7,10 @@
         <div class="card border-0 shadow-lg rounded-4 text-center p-5" style="max-width: 650px; width: 100%;">
 
             <div class="mb-4">
-                <h1 class="display-1 fw-bold text-danger">404</h1>
-                <h3 class="fw-semibold mt-3">Acceso denegado</h3>
+                <h1 class="display-1 fw-bold text-danger">403</h1>
+                <h3 class="fw-semibold mt-3">Acceso restringido</h3>
                 <p class="text-muted mt-3">
-                    ¿A donde intentas ingresar?, Esta pagina no Existe.
+                    No tienes los permisos necesarios para acceder a este recurso.
                 </p>
             </div>
 
@@ -42,6 +42,9 @@
                         Volver a la página anterior
                     </a>
 
+                    <button onclick="window.close();" class="btn btn-outline-secondary btn-lg rounded-3">
+                        Cerrar esta ventana
+                    </button>
                 {% endif %}
 
             </div>
