@@ -1416,6 +1416,9 @@ def submit_form(request, code):
             if f'form_token_{code}' in request.session:
                 del request.session[f'form_token_{code}']
 
+        # Enviar correo de confirmación si la operación fue exitosa
+        _send_submission_email(request, formInfo, cleaned_answers, email_value, funcionario)
+
         return render(request, "index/form_response.html", {
             "form": formInfo,
             "code": response_code,
