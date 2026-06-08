@@ -36,6 +36,13 @@ ALLOWED_HOSTS = os.getenv(
     "127.0.0.1,localhost"
 ).split(",")
 
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    ""
+).split(",")
+if CSRF_TRUSTED_ORIGINS == [""]:
+    CSRF_TRUSTED_ORIGINS = []
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -117,9 +124,9 @@ AUTH_USER_MODEL = "index.User"
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
-LANGUAGE_CODE = 'es'
+LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'es')
 
-TIME_ZONE = 'America/Santiago'
+TIME_ZONE = os.getenv('TIME_ZONE', 'America/Santiago')
 
 USE_I18N = True
 
@@ -130,7 +137,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = os.getenv('STATIC_URL', '/static/')
 
 '''SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
@@ -194,6 +201,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', 3600))  # Default 1 hour
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Security / Cookie / CSRF Settings from ENV
+CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+
+SESSION_COOKIE_NAME = os.getenv('SESSION_COOKIE_NAME', 'sessionid')
+CSRF_COOKIE_NAME = os.getenv('CSRF_COOKIE_NAME', 'csrftoken')
+
+SESSION_COOKIE_PATH = os.getenv('SESSION_COOKIE_PATH', '/')
+CSRF_COOKIE_PATH = os.getenv('CSRF_COOKIE_PATH', '/')
+
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() == 'true'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
+
+USE_X_FORWARDED_HOST = os.getenv('USE_X_FORWARDED_HOST', 'False').lower() == 'true'
+
+X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
 # Base URL Configuration
 from urllib.parse import urlparse
