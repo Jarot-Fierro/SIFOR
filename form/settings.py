@@ -222,19 +222,23 @@ X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 # Base URL Configuration
 from urllib.parse import urlparse
 
-_app_url_prefix = os.getenv('APP_URL_PREFIX', None)
-if _app_url_prefix:
-    # Si es una URL completa, extraemos solo el path
-    # Si solo es un path, urlparse lo manejará correctamente
-    parsed_prefix = urlparse(_app_url_prefix)
-    FORCE_SCRIPT_NAME = parsed_prefix.path
-    if FORCE_SCRIPT_NAME.endswith('/'):
-        FORCE_SCRIPT_NAME = FORCE_SCRIPT_NAME[:-1]
-    if not FORCE_SCRIPT_NAME.startswith('/'):
-        FORCE_SCRIPT_NAME = '/' + FORCE_SCRIPT_NAME
-    if FORCE_SCRIPT_NAME == '/':
-        FORCE_SCRIPT_NAME = None
-else:
-    FORCE_SCRIPT_NAME = None
+# Priorizar FORCE_SCRIPT_NAME directo del .env si existe
+FORCE_SCRIPT_NAME = os.getenv('FORCE_SCRIPT_NAME', None)
+
+if not FORCE_SCRIPT_NAME:
+    _app_url_prefix = os.getenv('APP_URL_PREFIX', None)
+    if _app_url_prefix:
+        # Si es una URL completa, extraemos solo el path
+        # Si solo es un path, urlparse lo manejará correctamente
+        parsed_prefix = urlparse(_app_url_prefix)
+        FORCE_SCRIPT_NAME = parsed_prefix.path
+        if FORCE_SCRIPT_NAME.endswith('/'):
+            FORCE_SCRIPT_NAME = FORCE_SCRIPT_NAME[:-1]
+        if not FORCE_SCRIPT_NAME.startswith('/'):
+            FORCE_SCRIPT_NAME = '/' + FORCE_SCRIPT_NAME
+        if FORCE_SCRIPT_NAME == '/':
+            FORCE_SCRIPT_NAME = None
+
+FORCE_SCRIPT_NAME_TO_HTML = os.getenv('FORCE_SCRIPT_NAME_TO_HTML', '')
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000
